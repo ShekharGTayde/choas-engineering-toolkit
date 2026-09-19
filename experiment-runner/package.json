@@ -1,0 +1,9 @@
+{
+  "name": "experiment-runner",
+  "version": "1.0.0",
+  "description": "Runs predefined chaos experiments and exports experiment data",
+  "main": "runner.js",
+  "scripts": {
+    "start": "node runner.js"
+  }
+}

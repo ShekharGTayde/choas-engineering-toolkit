@@ -1,0 +1,210 @@
+.card {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 1.15rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.card:hover { transform: translateY(-2px); }
+.cardUp   { border-left: 3px solid var(--green); }
+.cardDown { border-left: 3px solid var(--red); }
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.statusDot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dotUp   { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2.5s infinite; }
+.dotDown { background: var(--red); }
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(74,222,128,.6); }
+  70%  { box-shadow: 0 0 0 6px rgba(74,222,128,0); }
+  100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+}
+.name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Environment badge */
+.envBadge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.prod    { background: rgba(248,113,113,.15); color: #fca5a5; }
+.staging { background: rgba(251,191,36,.14);  color: #fde68a; }
+.dev     { background: rgba(56,189,248,.13);  color: #7dd3fc; }
+
+/* URL row */
+.urlRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+}
+.urlRow svg { color: var(--muted); flex-shrink: 0; }
+.url {
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+}
+
+/* Metrics */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+.metric {
+  background: var(--canvas-mid);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.6rem;
+}
+.metricLabel {
+  display: block;
+  font-size: 0.63rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 600;
+}
+.metric strong {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-top: 0.2rem;
+  color: var(--ink);
+  font-family: 'JetBrains Mono', monospace;
+}
+.metricUp   { color: var(--green) !important; }
+.metricDown { color: var(--red)   !important; }
+
+/* Error message */
+.errorMsg {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--red);
+  background: rgba(248,113,113,.07);
+  border: 1px solid rgba(248,113,113,.2);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.65rem;
+  line-height: 1.5;
+}
+.errorMsg svg { flex-shrink: 0; margin-top: 1px; }
+
+/* History sparkline */
+.historyRow {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.historyLabel {
+  font-size: 0.7rem;
+  color: var(--muted);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 600;
+}
+.sparkline {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  flex: 1;
+  height: 16px;
+}
+.spark {
+  flex: 1;
+  min-width: 3px;
+  height: 100%;
+  border-radius: 2px;
+}
+.sparkUp   { background: var(--green); opacity: 0.75; }
+.sparkDown { background: var(--red);   opacity: 0.75; }
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.1rem;
+}
+.btnCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  justify-content: center;
+  border: 1px solid var(--line-bright);
+  background: transparent;
+  color: var(--ink-dim);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.btnCheck:hover:not(:disabled) { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-glow); }
+.btnCheck:disabled { opacity: 0.45; cursor: default; }
+
+.btnDelete {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btnDelete:hover { border-color: var(--red); color: var(--red); }
+
+.mini_spinner {
+  width: 12px; height: 12px;
+  border: 2px solid rgba(56,189,248,.3);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 420px) {
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+}

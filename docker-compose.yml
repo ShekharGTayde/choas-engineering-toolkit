@@ -1,0 +1,137 @@
+services:
+  payment-service:
+    build: ./payment-service
+    image: payment-service:1.0
+    container_name: payment-service-container
+    ports:
+      - "3000:3000"
+
+  order-service:
+    build: ./order-service
+    image: order-service:1.0
+    container_name: order-service-container
+    ports:
+      - "3001:3000"
+    depends_on:
+      - payment-service
+
+  notification-service:
+    build: ./notification-service
+    image: notification-service:1.0
+    container_name: notification-service-container
+    ports:
+      - "3002:3000"
+    depends_on:
+      - order-service
+
+  chaos-controller:
+    build: ./chaos-controller
+    image: chaos-controller:1.0
+    container_name: chaos-controller-container
+    ports:
+      - "127.0.0.1:4000:4000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/app/data
+    depends_on:
+      - payment-service
+      - order-service
+      - notification-service
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: prometheus-container
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - payment-service
+      - order-service
+      - notification-service
+
+  ai-service:
+    build: ./ai
+    container_name: ai-analysis-service
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      GEMINI_TIMEOUT_SECONDS: ${GEMINI_TIMEOUT_SECONDS:-30}
+      AI_ANALYSIS_STORE_PATH: /app/data/ai_analysis.json
+    volumes:
+      - ./data:/app/data
+
+  dashboard:
+    build: ./dashboard
+    container_name: chaos-dashboard
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      CHAOS_CONTROLLER_URL: http://chaos-controller:4000
+      AI_SERVICE_URL: http://ai-service:8000
+      AUTOMATION_SERVICE_URL: http://automation-service:8100
+      LOAD_TEST_URL: http://load-test-runner:8200
+      DATA_DIRECTORY: /app/data
+      SERVERS_FILE: /app/servers/registered_servers.json
+    volumes:
+      - ./data:/app/data:ro
+      - ./dashboard/servers:/app/servers
+    depends_on:
+      - chaos-controller
+      - ai-service
+      - payment-service
+      - order-service
+      - notification-service
+      - automation-service
+      - load-test-runner
+
+  load-test-runner:
+    build: ./load-test-runner
+    container_name: load-test-runner
+    ports:
+      - "127.0.0.1:8200:8200"
+    environment:
+      AI_SERVICE_URL: http://ai-service:8000
+      DATA_DIRECTORY: /app/data
+      MAX_USERS: "2000"
+      MAX_DURATION: "600"
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - ai-service
+      - payment-service
+      - order-service
+      - notification-service
+
+  automation-service:
+    build:
+      context: .
+      dockerfile: ./automation/Dockerfile
+    container_name: experiment-automation
+    ports:
+      - "127.0.0.1:8100:8100"
+    environment:
+      CHAOS_CONTROLLER_URL: http://chaos-controller:4000
+      AI_SERVICE_URL: http://ai-service:8000
+      PROMETHEUS_URL: http://prometheus:9090
+      ORDER_SERVICE_URL: http://order-service:3000
+      DATA_DIRECTORY: /app/data
+    volumes:
+      - ./data:/app/data
+      - ./ai/outputs:/app/ai/outputs
+    depends_on:
+      - chaos-controller
+      - ai-service
+      - prometheus
+
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      # Lower MTU prevents packet fragmentation on Wi-Fi / WSL2 (default 1500 causes ETIMEDOUT)
+      com.docker.network.driver.mtu: "1450"
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16

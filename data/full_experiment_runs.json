@@ -1,0 +1,38 @@
+[
+  {
+    "runId": "ec533076-822f-4d9e-b85d-6efc1e9a19ba",
+    "request": {
+      "targetService": "payment-service",
+      "failureType": "latency",
+      "durationSeconds": 10,
+      "latencyMilliseconds": 500
+    },
+    "executionStatus": "FAILED",
+    "status": "FAILED",
+    "statusHistory": [
+      {
+        "status": "QUEUED",
+        "at": "2026-09-19T13:59:23.855292Z"
+      },
+      {
+        "status": "RUNNING",
+        "at": "2026-09-19T13:59:23.861823Z"
+      },
+      {
+        "status": "FAULT_INJECTED",
+        "at": "2026-09-19T13:59:23.994380Z"
+      },
+      {
+        "status": "COLLECTING_METRICS",
+        "at": "2026-09-19T13:59:36.261138Z"
+      },
+      {
+        "status": "FAILED",
+        "at": "2026-09-19T13:59:36.290016Z"
+      }
+    ],
+    "createdAt": "2026-09-19T13:59:23.855378Z",
+    "failedStage": "COLLECTING_METRICS",
+    "error": "dict contains fields not in fieldnames: 'prometheusObservation'"
+  }
+]

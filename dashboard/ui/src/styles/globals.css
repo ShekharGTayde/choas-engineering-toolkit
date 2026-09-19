@@ -1,0 +1,211 @@
+/* ── ChaosGuard Design Tokens per design.md ─────────────────────────────── */
+
+:root {
+  /* Dark Theme (Default) — "Night Ops" (navy / slate / soft blue / cream) */
+  --bg-base: #213448;
+  --bg-surface: #2B4054;
+  --bg-surface-raised: #33495F;
+  --border-subtle: rgba(84, 119, 146, 0.35);
+  --border-focus: #94B4C1;
+  --accent-signal: #94B4C1;
+  --accent-hover: #A9C7D3;
+  --accent-active: #7E9DA9;
+  --text-primary: #EAE0CF;
+  --text-secondary: rgba(148, 180, 193, 0.70);
+  --text-muted: rgba(148, 180, 193, 0.50);
+
+  /* Status Colors (Functional, theme-independent per design.md 2.4) */
+  --status-healthy: #7C9A6B;
+  --status-healthy-bg: rgba(124, 154, 107, 0.16);
+  --status-degraded: #C9932F;
+  --status-degraded-bg: rgba(201, 147, 47, 0.16);
+  --status-critical: #C0524D;
+  --status-critical-bg: rgba(192, 82, 77, 0.16);
+  --status-recovering: #547792;
+  --status-recovering-bg: rgba(84, 119, 146, 0.16);
+
+  /* Fonts */
+  --font-ui: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Sizing and Radius */
+  --radius: 6px;
+  --radius-sm: 4px;
+  --sidebar-width: 240px;
+
+  /* Aliases for legacy component compatibility */
+  --ink: var(--text-primary);
+  --ink-dim: var(--text-secondary);
+  --muted: var(--text-muted);
+  --canvas: var(--bg-base);
+  --canvas-mid: var(--bg-surface);
+  --panel: var(--bg-surface);
+  --panel-hover: var(--bg-surface-raised);
+  --line: var(--border-subtle);
+  --line-bright: var(--accent-signal);
+  --cyan: var(--accent-signal);
+  --cyan-glow: rgba(148, 180, 193, 0.15);
+  --green: var(--status-healthy);
+  --amber: var(--status-degraded);
+  --red: var(--status-critical);
+  --purple: var(--status-recovering);
+}
+
+[data-theme="light"] {
+  /* Light Theme — "Daylight" (cream / sage / muted green / olive) */
+  --bg-base: #F6F0D7;
+  --bg-surface: #FBF8EC;
+  --bg-surface-raised: #FFFFFF;
+  --border-subtle: rgba(197, 216, 157, 0.45);
+  --border-focus: #89986D;
+  --accent-signal: #89986D;
+  --accent-hover: #9BAA7E;
+  --accent-active: #758459;
+  --text-primary: #213448; /* Shared ink/paper thread */
+  --text-secondary: #5B6653;
+  --text-muted: #7E8B75;
+
+  /* Status Colors remain identical for universal readability */
+  --status-healthy: #7C9A6B;
+  --status-healthy-bg: rgba(124, 154, 107, 0.14);
+  --status-degraded: #C9932F;
+  --status-degraded-bg: rgba(201, 147, 47, 0.14);
+  --status-critical: #C0524D;
+  --status-critical-bg: rgba(192, 82, 77, 0.14);
+  --status-recovering: #547792;
+  --status-recovering-bg: rgba(84, 119, 146, 0.14);
+
+  --cyan-glow: rgba(137, 152, 109, 0.15);
+}
+
+/* ── Reset & Base Styles ─────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+/* Typography styles */
+button, select, input, textarea {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: inherit;
+}
+
+code, pre, .mono, [data-mono="true"] {
+  font-family: var(--font-mono);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--accent-signal);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-signal);
+  outline-offset: 2px;
+}
+
+/* ── App Shell Layout ────────────────────────────────────────────────────── */
+.app {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-base);
+}
+
+.app-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+  margin-left: var(--sidebar-width);
+}
+
+@media (max-width: 900px) {
+  .app-body {
+    margin-left: 0;
+  }
+}
+
+.main {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 3rem;
+  flex: 1;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(320px, 1fr);
+  gap: 1.25rem;
+  padding-bottom: 2rem;
+}
+
+/* Toast notifications */
+.toast-area {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 300;
+  pointer-events: none;
+}
+.toast-area > * {
+  pointer-events: auto;
+}
+
+.refresh-error {
+  background: var(--status-critical-bg);
+  border: 1px solid var(--status-critical);
+  border-radius: var(--radius);
+  padding: 0.65rem 1rem;
+  font-size: 0.82rem;
+  color: var(--status-critical);
+  margin-bottom: 1rem;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 1rem;
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "experimentId": "EXP-112",
+  "targetService": "payment-service",
+  "failureType": "stop",
+  "configuredFailureDuration": 60,
+  "injectedLatencyMilliseconds": 0,
+  "actualRecoveryDuration": 61.31,
+  "totalRequests": 100,
+  "successfulRequests": 7,
+  "failedRequests": 93,
+  "errorRate": 93,
+  "averageResponseTime": 2695.4,
+  "peakResponseTime": 3010,
+  "affectedServiceCount": 2,
+  "cascadingFailure": true,
+  "anomalyLabel": "ANOMALY",
+  "anomalyScore": -0.040554,
+  "resilienceScore": 85.4,
+  "riskLevel": "CRITICAL"
+}

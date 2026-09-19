@@ -1,0 +1,13 @@
+{
+  "name": "chaos-controller",
+  "version": "1.0.0",
+  "description": "Controlled chaos experiments for the Mini Chaos Engineering Toolkit",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dockerode": "^4.0.9",
+    "express": "^5.1.0"
+  }
+}

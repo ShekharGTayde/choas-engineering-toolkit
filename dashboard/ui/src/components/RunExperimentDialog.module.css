@@ -1,0 +1,272 @@
+.dialog {
+  margin: auto;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-surface);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  padding: 0;
+  width: min(480px, 94vw);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+.dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(3px);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.4rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.iconWrap {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface-raised);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-signal);
+  flex-shrink: 0;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--accent-signal);
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.title {
+  font-family: var(--font-ui);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.body {
+  padding: 1.25rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.inputWrap:focus-within {
+  border-color: var(--accent-signal);
+}
+
+.input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+  outline: none;
+  width: 100%;
+}
+
+.inputSuffix {
+  padding: 0 0.65rem;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  border-left: 1px solid var(--border-subtle);
+  background-color: var(--bg-surface-raised);
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.select {
+  background-color: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color 150ms ease;
+}
+
+.select:focus {
+  border-color: var(--accent-signal);
+}
+
+.confirmBox {
+  background-color: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  line-height: 1.55;
+}
+
+.confirmBox p {
+  margin: 0;
+}
+.confirmBox p + p {
+  margin-top: 0.4rem;
+}
+
+.highlight {
+  color: var(--accent-signal);
+  font-weight: 600;
+}
+
+.confirmNote {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding: 0.9rem 1.4rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: none;
+  background-color: var(--accent-signal);
+  color: var(--bg-base);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 1.1rem;
+  font-weight: 600;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnGhost {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 1rem;
+  font-weight: 500;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.btnGhost:hover {
+  border-color: var(--accent-signal);
+  color: var(--text-primary);
+}
+
+.pipeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-sm);
+}
+
+.done {
+  color: var(--status-healthy);
+}
+
+.active {
+  color: var(--accent-signal);
+  font-weight: 600;
+  background-color: rgba(148, 180, 193, 0.1);
+}
+
+.failed {
+  color: var(--status-critical);
+  background-color: var(--status-critical-bg);
+}
+
+.stepIcon {
+  font-size: 0.85rem;
+}
+
+.stepLabel {
+  flex: 1;
+}
+
+.checkmark {
+  color: var(--status-healthy);
+  font-family: var(--font-mono);
+}
+
+.errorBox {
+  background-color: var(--status-critical-bg);
+  border: 1px solid var(--status-critical);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 1rem;
+  font-size: 0.82rem;
+  color: var(--status-critical);
+}
+
+.successBox {
+  background-color: var(--status-healthy-bg);
+  border: 1px solid var(--status-healthy);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 1rem;
+  font-size: 0.82rem;
+  color: var(--status-healthy);
+  text-align: center;
+}

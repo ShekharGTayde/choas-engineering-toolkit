@@ -1,0 +1,41 @@
+.screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  text-align: center;
+  padding: 2rem;
+  background: var(--canvas);
+}
+
+.icon { font-size: 2.5rem; }
+
+.title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.message {
+  font-size: 0.88rem;
+  color: var(--muted);
+  max-width: 360px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.btn {
+  border: 1px solid var(--cyan);
+  background: var(--cyan-glow);
+  color: var(--cyan);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1.4rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn:hover { background: rgba(56, 189, 248, 0.25); }

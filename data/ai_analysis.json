@@ -1,0 +1,40 @@
+[
+  {
+    "experimentId": "EXP-112",
+    "failureSummary": "OBSERVED: Experiment EXP-112 applied a stop failure to payment-service for 60.0 seconds, resulting in a 93.0% error rate and cascading failure across 2 services.",
+    "severityExplanation": "OBSERVED: Assigned riskLevel is CRITICAL with an anomalyScore of -0.040554 and anomalyLabel of ANOMALY. INFERRED: The CRITICAL level reflects severe impact characterized by 93 failed requests out of 100 and cascading service impact.",
+    "observedBehavior": [
+      "OBSERVED: payment-service target received failureType stop with configuredFailureDuration 60.0s and injectedLatencyMilliseconds 0.0.",
+      "OBSERVED: Total requests: 100, successful: 7, failed: 93, resulting in an errorRate of 93.0%.",
+      "OBSERVED: Average response time was 2695.4 ms with a peak response time of 3010.0 ms.",
+      "OBSERVED: Cascading failure was True with affectedServiceCount of 2 and actualRecoveryDuration of 61.31s."
+    ],
+    "likelyFailureMechanism": "INFERRED: Unhandled unavailable payment-service state caused upstream request pileup and failure propagation. Likely mechanism based on observed behavior; root cause requires additional tracing/log analysis.",
+    "resilienceAssessment": "OBSERVED: The system achieved a resilienceScore of 85.4. INFERRED: System resilience is insufficient against service outage due to cascading failure affecting 2 services.",
+    "recommendations": [
+      {
+        "priority": "CRITICAL",
+        "action": "Implement circuit breaker and fallback mechanisms for callers of payment-service.",
+        "reason": "OBSERVED: Cascading failure affected 2 services with 93.0% error rate when payment-service stopped."
+      },
+      {
+        "priority": "HIGH",
+        "action": "Apply dependency isolation and timeout policies on upstream callers.",
+        "reason": "INFERRED: Prevent high peak response times (3010.0 ms) and cascading impacts during dependency failures."
+      }
+    ],
+    "suggestedExperiments": [
+      {
+        "failureType": "stop",
+        "targetService": "payment-service",
+        "reason": "Verify fallback behavior and isolation during payment-service shutdown."
+      },
+      {
+        "failureType": "latency",
+        "targetService": "payment-service",
+        "reason": "Assess system response and timeout configurations under degraded dependency performance."
+      }
+    ],
+    "analyzedAt": "2026-08-23T10:46:06.646709Z"
+  }
+]

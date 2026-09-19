@@ -1,0 +1,13 @@
+.env
+__pycache__/
+*.py[cod]
+.venv/
+node_modules/
+dashboard/node_modules/
+dashboard/build/
+.venv-local/
+local-logs/
+ai/outputs/
+dashboard/servers/users.json
+dashboard/servers/registered_servers.json
+.vscode
