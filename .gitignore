@@ -11,3 +11,4 @@ ai/outputs/
 dashboard/servers/users.json
 dashboard/servers/registered_servers.json
 .vscode
+.agent

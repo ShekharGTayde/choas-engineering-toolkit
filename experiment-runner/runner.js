@@ -5,9 +5,18 @@ const crypto = require('node:crypto');
 const controllerUrl = process.env.CONTROLLER_URL || 'http://localhost:4000';
 const orderServiceUrl = process.env.ORDER_SERVICE_URL || 'http://localhost:3001';
 const prometheusUrl = process.env.PROMETHEUS_URL || 'http://localhost:9090';
+const JWT_SECRET = process.env.JWT_SECRET || 'chaosguard_jwt_secret_dev_key_2026';
 const dataFile = path.join(__dirname, '..', 'data', 'experiments.json');
 const csvFile = path.join(__dirname, '..', 'data', 'experiments.csv');
 const requestTimeoutMilliseconds = 5000;
+
+function createOperatorJwt() {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const exp = Math.floor(Date.now() / 1000) + 3600;
+  const body = Buffer.from(JSON.stringify({ id: 'usr_experiment_runner', name: 'Experiment Runner', role: 'Operator', exp })).toString('base64url');
+  const sig = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
+  return `${header}.${body}.${sig}`;
+}
 
 const services = ['payment-service', 'order-service', 'notification-service'];
 const failureTypes = ['stop', 'restart'];
@@ -264,7 +273,10 @@ async function runScenario(scenario, index) {
   validateUniqueExperimentIds(experimentsBefore);
   const experimentPromise = getJson(`${controllerUrl}/experiments`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${createOperatorJwt()}`
+    },
     body: JSON.stringify(scenario),
     timeoutMilliseconds: (scenario.durationSeconds + 10) * 1000
   });

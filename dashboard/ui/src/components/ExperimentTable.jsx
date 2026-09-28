@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Badge from './Badge.jsx';
 import styles from './ExperimentTable.module.css';
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 12;
 const fmt = (v, d = 0) => Number(v ?? 0).toLocaleString(undefined, { maximumFractionDigits: d });
 
 function ErrorRateCell({ rate }) {
@@ -14,7 +14,7 @@ function ErrorRateCell({ rate }) {
 
 function FailureTypeCell({ type }) {
   const dot = styles[`dot_${type}`] || styles.dot_default;
-  const label = type ? type.charAt(0).toUpperCase() + type.slice(1) : '—';
+  const label = type ? type.toUpperCase() : '—';
   return (
     <span className={styles.failureCell}>
       <span className={`${styles.dot} ${dot}`} />
@@ -33,6 +33,7 @@ export default function ExperimentTable({
   onRiskFilterChange,
   serviceFilter,
   onServiceFilterChange,
+  loading = false,
 }) {
   const [page, setPage] = useState(1);
 
@@ -47,7 +48,6 @@ export default function ExperimentTable({
       );
   }, [experiments, search, riskFilter, serviceFilter]);
 
-  // Reset page when filters change
   useMemo(() => setPage(1), [filtered.length, search, riskFilter, serviceFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -56,12 +56,18 @@ export default function ExperimentTable({
 
   return (
     <div className={styles.panel}>
+      <span className={`${styles.crosshair} ${styles.tl}`}>+</span>
+      <span className={`${styles.crosshair} ${styles.tr}`}>+</span>
+      <span className={`${styles.crosshair} ${styles.bl}`}>+</span>
+      <span className={`${styles.crosshair} ${styles.br}`}>+</span>
+
       {/* Panel header */}
       <div className={styles.panelHead}>
         <div>
-          <span className={styles.eyebrow}>Experiment Registry</span>
-          <h2 className={styles.panelTitle}>Past & Executed Experiments</h2>
+          <div className={styles.moduleTag}>[MODULE // AUDIT-LOG]</div>
+          <h3 className={styles.panelTitle}>HISTORICAL FAULT SUITE</h3>
         </div>
+
         <div className={styles.controls}>
           <div className={styles.searchWrap}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -71,7 +77,7 @@ export default function ExperimentTable({
             <input
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search ID, service, fault…"
+              placeholder="SEARCH ID, SERVICE, FAULT…"
               aria-label="Search experiments"
               className={styles.searchInput}
             />
@@ -79,128 +85,155 @@ export default function ExperimentTable({
               <button className={styles.clearBtn} onClick={() => onSearchChange('')} aria-label="Clear search">×</button>
             )}
           </div>
+
           <select
             value={riskFilter}
             onChange={(e) => onRiskFilterChange(e.target.value)}
             aria-label="Filter by risk level"
             className={styles.select}
           >
-            <option value="">All risk levels</option>
-            <option value="LOW">Low risk</option>
-            <option value="MEDIUM">Medium risk</option>
-            <option value="HIGH">High risk</option>
-            <option value="CRITICAL">Critical risk</option>
+            <option value="">ALL RISK LEVELS</option>
+            <option value="LOW">LOW RISK</option>
+            <option value="MEDIUM">MEDIUM RISK</option>
+            <option value="HIGH">HIGH RISK</option>
+            <option value="CRITICAL">CRITICAL RISK</option>
           </select>
+
           <select
             value={serviceFilter}
             onChange={(e) => onServiceFilterChange(e.target.value)}
             aria-label="Filter by service"
             className={styles.select}
           >
-            <option value="">All services</option>
-            <option value="payment-service">Payment</option>
-            <option value="order-service">Order</option>
-            <option value="notification-service">Notification</option>
+            <option value="">ALL TARGET SERVICES</option>
+            <option value="payment-service">PAYMENT-SERVICE</option>
+            <option value="order-service">ORDER-SERVICE</option>
+            <option value="notification-service">NOTIFICATION-SERVICE</option>
           </select>
         </div>
       </div>
 
-      {/* Meta row */}
+      {/* Meta Bar */}
       <div className={styles.meta}>
-        <span>
-          {filtered.length === experiments.length
-            ? `${experiments.length} experiments recorded`
-            : `${filtered.length} of ${experiments.length} experiments`}
+        <span className={styles.metaCount}>
+          INDEX: {filtered.length} OF {experiments.length} EXPERIMENTS
         </span>
         {filtered.length > PAGE_SIZE && (
-          <span className={styles.pageMeta}>Page {safePage} of {totalPages}</span>
+          <span className={styles.pageMeta}>PAGE {safePage} / {totalPages}</span>
         )}
       </div>
 
-      {/* Table */}
+      {/* Data Table with Hairline Rows */}
       <div className={styles.tableWrap}>
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>Experiment ID</th>
-              <th>Target</th>
-              <th>Fault Type</th>
-              <th>Duration</th>
-              <th>Error Rate</th>
-              <th>Risk Level</th>
-              <th>Anomaly</th>
-              <th>Resilience Score</th>
+              <th>EXP ID</th>
+              <th>TARGET SERVICE</th>
+              <th>FAULT TYPE</th>
+              <th>DURATION</th>
+              <th>ERROR RATE</th>
+              <th>RISK LEVEL</th>
+              <th>ANOMALY STATUS</th>
+              <th>RESILIENCE</th>
             </tr>
           </thead>
           <tbody>
-            {pageItems.length === 0 ? (
-              <tr>
-                <td colSpan={8} className={styles.empty}>
-                  No experiments match the specified search or filter criteria.
-                </td>
-              </tr>
-            ) : (
-              pageItems.map((exp) => (
-                <tr
-                  key={exp.experimentId}
-                  onClick={() => onSelect(exp)}
-                  className={selected?.experimentId === exp.experimentId ? styles.active : ''}
-                >
-                  <td><span className={styles.expId}>{exp.experimentId}</span></td>
-                  <td className={styles.service}>{exp.targetService?.replace('-service', '')}</td>
-                  <td><FailureTypeCell type={exp.failureType} /></td>
-                  <td className={styles.mono}>{exp.configuredFailureDuration}s</td>
-                  <td><ErrorRateCell rate={exp.errorRate} /></td>
-                  <td><Badge value={exp.riskLevel} /></td>
-                  <td><Badge value={exp.anomalyLabel} /></td>
-                  <td className={styles.mono}>
-                    {exp.resilienceScore == null ? '—' : fmt(exp.resilienceScore, 1)}
+            {loading ? (
+              [1, 2, 3, 4, 5].map((i) => (
+                <tr key={i} className={styles.skeletonRow}>
+                  <td colSpan={8}>
+                    <div className={styles.skeletonLine}></div>
                   </td>
                 </tr>
               ))
+            ) : pageItems.length === 0 ? (
+              <tr>
+                <td colSpan={8} className={styles.empty}>
+                  <div className={styles.emptyIcon}>[∅]</div>
+                  <div>NO EXPERIMENTS MATCH QUERY OR CRITERIA.</div>
+                </td>
+              </tr>
+            ) : (
+              pageItems.map((exp) => {
+                const isSelected = selected?.experimentId === exp.experimentId;
+                const score = exp.resilienceScore != null ? Number(exp.resilienceScore) : null;
+                return (
+                  <tr
+                    key={exp.experimentId}
+                    className={`${styles.row} ${isSelected ? styles.rowSelected : ''}`}
+                    onClick={() => onSelect(exp)}
+                    tabIndex={0}
+                    role="button"
+                    aria-pressed={isSelected}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelect(exp);
+                      }
+                    }}
+                  >
+                    <td>
+                      <span className={styles.idCell}>{exp.experimentId}</span>
+                    </td>
+                    <td>
+                      <span className={styles.targetCell}>{exp.targetService}</span>
+                    </td>
+                    <td>
+                      <FailureTypeCell type={exp.failureType} />
+                    </td>
+                    <td>
+                      <span className={styles.monoCell}>{exp.duration}s</span>
+                    </td>
+                    <td>
+                      <ErrorRateCell rate={exp.errorRate} />
+                    </td>
+                    <td>
+                      <Badge variant={exp.riskLevel}>{exp.riskLevel || 'UNKNOWN'}</Badge>
+                    </td>
+                    <td>
+                      {exp.anomalyLabel === 'ANOMALY' ? (
+                        <span className={styles.anomalyBadge}>ANOMALY</span>
+                      ) : (
+                        <span className={styles.normalBadge}>NORMAL</span>
+                      )}
+                    </td>
+                    <td>
+                      <span className={styles.scoreCell}>
+                        {score != null ? `${fmt(score, 1)}` : '—'}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* Hairline Pagination */}
       {totalPages > 1 && (
         <div className={styles.pagination}>
           <button
+            type="button"
             className={styles.pageBtn}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={safePage === 1}
+            aria-label="Previous page"
           >
-            Previous
+            ← PREV
           </button>
-          <div className={styles.pageNumbers}>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
-              .reduce((acc, p, idx, arr) => {
-                if (idx > 0 && p - arr[idx - 1] > 1) acc.push('…');
-                acc.push(p);
-                return acc;
-              }, [])
-              .map((p, i) =>
-                p === '…' ? (
-                  <span key={`ellipsis-${i}`} className={styles.ellipsis}>…</span>
-                ) : (
-                  <button
-                    key={p}
-                    className={`${styles.pageBtn} ${p === safePage ? styles.activePage : ''}`}
-                    onClick={() => setPage(p)}
-                  >
-                    {p}
-                  </button>
-                ),
-              )}
-          </div>
+          <span className={styles.pageIndicator}>
+            PAGE {safePage} / {totalPages}
+          </span>
           <button
+            type="button"
             className={styles.pageBtn}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={safePage === totalPages}
+            aria-label="Next page"
           >
-            Next
+            NEXT →
           </button>
         </div>
       )}

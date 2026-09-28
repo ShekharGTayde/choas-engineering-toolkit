@@ -14,16 +14,41 @@ function StatCard({ label, value, className }) {
   );
 }
 
-function AiSection({ analysis }) {
-  if (!analysis) {
-    return (
-      <section className={styles.section}>
-        <h3 className={styles.sectionTitle}>AI Root Cause & Analysis</h3>
-        <p className={styles.noAnalysis}>No saved AI analysis is available for this experiment.</p>
-      </section>
-    );
-  }
+/** State 1 — no anomaly detected; LLM was intentionally skipped. */
+function NoAnomalySection({ analysis }) {
+  return (
+    <section className={styles.section}>
+      <div className={styles.aiSourceBadge + ' ' + styles.aiSourceNoAnomaly}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        ML: No Anomaly Detected · LLM Skipped
+      </div>
+      <h3 className={styles.sectionTitle}>System Behaviour Summary</h3>
+      <p className={styles.analysisText}>{analysis.failureSummary}</p>
+      <p className={styles.analysisText}>{analysis.resilienceAssessment}</p>
+      {analysis.recommendations?.length > 0 && (
+        <>
+          <h3 className={styles.sectionTitle} style={{ marginTop: '1rem' }}>Baseline Recommendations</h3>
+          <div className={styles.recommendationsList}>
+            {analysis.recommendations.map((r, i) => (
+              <div key={i} className={`${styles.recommendation} ${styles[`rec_${r.priority}`] || ''}`}>
+                <div className={styles.recHeader}>
+                  <Badge value={r.priority} />
+                  <strong className={styles.recAction}>{r.action}</strong>
+                </div>
+                <p className={styles.recReason}>{r.reason}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
 
+/** State 3 — anomaly detected but LLM failed; rule-based fallback used. */
+function FallbackSection({ analysis }) {
   const sortedRecs = [...(analysis.recommendations || [])].sort(
     (a, b) => (PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99),
   );
@@ -31,12 +56,30 @@ function AiSection({ analysis }) {
   return (
     <>
       <section className={styles.section}>
-        <h3 className={styles.sectionTitle}>AI Root Cause & Failure Analysis</h3>
+        <div className={styles.aiSourceBadge + ' ' + styles.aiSourceFallback}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          ANOMALY · Rule-Based Fallback (LLM Unavailable)
+        </div>
+        <h3 className={styles.sectionTitle}>Anomaly Root Cause Analysis (Rule Engine)</h3>
         <div className={styles.proseContainer}>
           <p className={styles.analysisText}>{analysis.failureSummary}</p>
           <p className={styles.analysisText}>{analysis.resilienceAssessment}</p>
         </div>
       </section>
+
+      {analysis.observedBehavior?.length > 0 && (
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Observed Behaviour</h3>
+          <ul className={styles.observedList}>
+            {analysis.observedBehavior.map((b, i) => (
+              <li key={i} className={styles.observedItem}>{b}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {sortedRecs.length > 0 && (
         <section className={styles.section}>
@@ -79,6 +122,98 @@ function AiSection({ analysis }) {
   );
 }
 
+/** State 2 — full Gemini AI analysis. */
+function AiGeneratedSection({ analysis }) {
+  const sortedRecs = [...(analysis.recommendations || [])].sort(
+    (a, b) => (PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99),
+  );
+
+  return (
+    <>
+      <section className={styles.section}>
+        <div className={styles.aiSourceBadge + ' ' + styles.aiSourceAi}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+          ANOMALY · Gemini AI Analysis
+        </div>
+        <h3 className={styles.sectionTitle}>AI Root Cause &amp; Failure Analysis</h3>
+        <div className={styles.proseContainer}>
+          <p className={styles.analysisText}>{analysis.failureSummary}</p>
+          <p className={styles.analysisText}>{analysis.resilienceAssessment}</p>
+        </div>
+      </section>
+
+      {analysis.observedBehavior?.length > 0 && (
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Observed Behaviour</h3>
+          <ul className={styles.observedList}>
+            {analysis.observedBehavior.map((b, i) => (
+              <li key={i} className={styles.observedItem}>{b}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {sortedRecs.length > 0 && (
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Actionable Fix Recommendations</h3>
+          <div className={styles.recommendationsList}>
+            {sortedRecs.map((r, i) => (
+              <div key={i} className={`${styles.recommendation} ${styles[`rec_${r.priority}`] || ''}`}>
+                <div className={styles.recHeader}>
+                  <Badge value={r.priority} />
+                  <strong className={styles.recAction}>{r.action}</strong>
+                </div>
+                <p className={styles.recReason}>{r.reason}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {analysis.suggestedExperiments?.length > 0 && (
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Suggested Next Chaos Experiments</h3>
+          <div className={styles.suggestions}>
+            {analysis.suggestedExperiments.map((s, i) => (
+              <div key={i} className={styles.suggestion}>
+                <div className={styles.suggestionIcon}>
+                  {s.failureType === 'stop' ? '⛔' : s.failureType === 'latency' ? '⏱' : '🔄'}
+                </div>
+                <div className={styles.suggestionContent}>
+                  <strong className={styles.suggestionTitle}>
+                    {s.failureType ? s.failureType.charAt(0).toUpperCase() + s.failureType.slice(1) : ''} fault on {s.targetService}
+                  </strong>
+                  <span className={styles.suggestionReason}>{s.reason}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </>
+  );
+}
+
+/** Dispatcher — picks the correct state panel based on analysisSource. */
+function AiSection({ analysis }) {
+  if (!analysis) {
+    return (
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>AI Root Cause &amp; Analysis</h3>
+        <p className={styles.noAnalysis}>No saved AI analysis is available for this experiment.</p>
+      </section>
+    );
+  }
+
+  const source = analysis.analysisSource || 'ai-generated';
+
+  if (source === 'no-anomaly') return <NoAnomalySection analysis={analysis} />;
+  if (source === 'rule-based-fallback') return <FallbackSection analysis={analysis} />;
+  return <AiGeneratedSection analysis={analysis} />;
+}
+
 export default function ExperimentDetail({ experiment }) {
   if (!experiment) {
     return (
@@ -106,15 +241,21 @@ export default function ExperimentDetail({ experiment }) {
 
   return (
     <aside className={styles.panel}>
+      <span className={`${styles.crosshair} ${styles.tl}`}>+</span>
+      <span className={`${styles.crosshair} ${styles.tr}`}>+</span>
+      <span className={`${styles.crosshair} ${styles.bl}`}>+</span>
+      <span className={`${styles.crosshair} ${styles.br}`}>+</span>
+
       <div className={styles.scroll}>
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerMeta}>
+            <div className={styles.moduleTag}>[MODULE // TELEMETRY-INSPECTOR]</div>
             <span className={styles.eyebrow}>
-              {experiment.experimentId} · {experiment.targetService}
+              {experiment.experimentId} · {experiment.targetService.toUpperCase()}
             </span>
             <h2 className={styles.title}>
-              {experiment.failureType ? experiment.failureType.charAt(0).toUpperCase() + experiment.failureType.slice(1) : ''} failure analysis
+              {experiment.failureType ? experiment.failureType.toUpperCase() : ''} FAULT ANALYSIS
             </h2>
           </div>
           <div className={styles.badges}>
@@ -166,7 +307,7 @@ export default function ExperimentDetail({ experiment }) {
           </div>
         )}
 
-        {/* AI Section */}
+        {/* 3-state AI Section */}
         <AiSection analysis={experiment.analysis} />
       </div>
     </aside>

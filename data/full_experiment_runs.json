@@ -1,6 +1,6 @@
 [
   {
-    "runId": "ec533076-822f-4d9e-b85d-6efc1e9a19ba",
+    "runId": "58fb8cb7-c76d-4cea-92cf-0ecd9602ec80",
     "request": {
       "targetService": "payment-service",
       "failureType": "latency",
@@ -12,27 +12,63 @@
     "statusHistory": [
       {
         "status": "QUEUED",
-        "at": "2026-09-19T13:59:23.855292Z"
+        "at": "2026-09-28T11:12:16.423203Z"
       },
       {
         "status": "RUNNING",
-        "at": "2026-09-19T13:59:23.861823Z"
+        "at": "2026-09-28T11:12:16.435415Z"
       },
       {
         "status": "FAULT_INJECTED",
-        "at": "2026-09-19T13:59:23.994380Z"
+        "at": "2026-09-28T11:12:16.667197Z"
       },
       {
         "status": "COLLECTING_METRICS",
-        "at": "2026-09-19T13:59:36.261138Z"
+        "at": "2026-09-28T11:12:28.936025Z"
       },
       {
         "status": "FAILED",
-        "at": "2026-09-19T13:59:36.290016Z"
+        "at": "2026-09-28T11:12:28.975293Z"
       }
     ],
-    "createdAt": "2026-09-19T13:59:23.855378Z",
+    "createdAt": "2026-09-28T11:12:16.423243Z",
     "failedStage": "COLLECTING_METRICS",
-    "error": "dict contains fields not in fieldnames: 'prometheusObservation'"
+    "error": "dict contains fields not in fieldnames: 'target', 'triggeredBy', 'experiment_start', 'prometheusObservation', 'fault_removed', 'targetSource', 'fault_injected', 'userId'"
+  },
+  {
+    "runId": "c20c32e4-8bba-4ef5-bfde-2e7da77a5c50",
+    "request": {
+      "targetService": "payment-service",
+      "failureType": "latency",
+      "durationSeconds": 10,
+      "latencyMilliseconds": 500
+    },
+    "executionStatus": "FAILED",
+    "status": "FAILED",
+    "statusHistory": [
+      {
+        "status": "QUEUED",
+        "at": "2026-09-28T11:13:08.693611Z"
+      },
+      {
+        "status": "RUNNING",
+        "at": "2026-09-28T11:13:08.700618Z"
+      },
+      {
+        "status": "FAULT_INJECTED",
+        "at": "2026-09-28T11:13:08.749043Z"
+      },
+      {
+        "status": "COLLECTING_METRICS",
+        "at": "2026-09-28T11:13:21.025347Z"
+      },
+      {
+        "status": "FAILED",
+        "at": "2026-09-28T11:13:21.064380Z"
+      }
+    ],
+    "createdAt": "2026-09-28T11:13:08.693630Z",
+    "failedStage": "COLLECTING_METRICS",
+    "error": "dict contains fields not in fieldnames: 'target', 'triggeredBy', 'experiment_start', 'prometheusObservation', 'fault_removed', 'targetSource', 'fault_injected', 'userId'"
   }
 ]

@@ -1,81 +1,94 @@
-/* ── ChaosGuard Design Tokens per design.md ─────────────────────────────── */
+/* ── ChaosGuard Design Tokens: Blueprint / Technical-Editorial Theme ──────── */
 
 :root {
-  /* Dark Theme (Default) — "Night Ops" (navy / slate / soft blue / cream) */
-  --bg-base: #213448;
-  --bg-surface: #2B4054;
-  --bg-surface-raised: #33495F;
-  --border-subtle: rgba(84, 119, 146, 0.35);
-  --border-focus: #94B4C1;
-  --accent-signal: #94B4C1;
-  --accent-hover: #A9C7D3;
-  --accent-active: #7E9DA9;
-  --text-primary: #EAE0CF;
-  --text-secondary: rgba(148, 180, 193, 0.70);
-  --text-muted: rgba(148, 180, 193, 0.50);
+  /* Blueprint / Technical-Editorial Exact Hex Values per Design Spec */
+  --paper: #F4F5F8;
+  --blue-primary: #2B3FD1;
+  --blue-deep: #1E32B5;
+  --blue-line: #7F92F5;
+  --ink: #0D111C;
+  --ink-secondary: #475467;
+  --ink-muted: #667085;
+  --accent-orange: #FF6A2B;
+  --accent-orange-hover: #E8581A;
+  --accent-orange-subtle: rgba(255, 106, 43, 0.12);
+  --glass: rgba(255, 255, 255, 0.68);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
 
-  /* Status Colors (Functional, theme-independent per design.md 2.4) */
-  --status-healthy: #7C9A6B;
-  --status-healthy-bg: rgba(124, 154, 107, 0.16);
-  --status-degraded: #C9932F;
-  --status-degraded-bg: rgba(201, 147, 47, 0.16);
-  --status-critical: #C0524D;
-  --status-critical-bg: rgba(192, 82, 77, 0.16);
-  --status-recovering: #547792;
-  --status-recovering-bg: rgba(84, 119, 146, 0.16);
+  /* Deep Blue Panel Glass / Accents */
+  --glass-blue: rgba(30, 50, 181, 0.55);
+  --glass-blue-border: rgba(127, 146, 245, 0.35);
+  --glass-blue-hover: rgba(43, 63, 209, 0.75);
 
-  /* Fonts */
-  --font-ui: 'Space Grotesk', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  /* Status Colors */
+  --status-healthy: #10B981;
+  --status-healthy-bg: rgba(16, 185, 129, 0.12);
+  --status-degraded: #F59E0B;
+  --status-degraded-bg: rgba(245, 158, 11, 0.14);
+  --status-critical: #EF4444;
+  --status-critical-bg: rgba(239, 68, 68, 0.14);
+  --status-recovering: #6366F1;
+  --status-recovering-bg: rgba(99, 102, 241, 0.14);
+
+  /* Typography */
+  --font-display: 'Barlow Condensed', 'Bebas Neue', 'Anton', sans-serif;
+  --font-ui: 'Inter', 'Manrope', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', monospace;
 
   /* Sizing and Radius */
+  --radius-pill: 9999px;
+  --radius-card: 8px;
   --radius: 6px;
   --radius-sm: 4px;
-  --sidebar-width: 240px;
+  --sidebar-width: 260px;
 
-  /* Aliases for legacy component compatibility */
-  --ink: var(--text-primary);
-  --ink-dim: var(--text-secondary);
-  --muted: var(--text-muted);
-  --canvas: var(--bg-base);
-  --canvas-mid: var(--bg-surface);
-  --panel: var(--bg-surface);
-  --panel-hover: var(--bg-surface-raised);
+  /* Aliases for backwards compatibility */
+  --bg-base: var(--paper);
+  --bg-surface: #FFFFFF;
+  --bg-surface-raised: #F8F9FC;
+  --border-subtle: rgba(13, 17, 28, 0.10);
+  --border-focus: var(--blue-primary);
+  --accent-signal: var(--blue-primary);
+  --accent-hover: #1E32B5;
+  --accent-active: #15248A;
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-secondary);
+  --text-muted: var(--ink-muted);
+  --ink-dim: var(--ink-secondary);
+  --muted: var(--ink-muted);
+  --canvas: var(--paper);
+  --canvas-mid: #FFFFFF;
+  --panel: #FFFFFF;
+  --panel-hover: #F8F9FC;
   --line: var(--border-subtle);
-  --line-bright: var(--accent-signal);
-  --cyan: var(--accent-signal);
-  --cyan-glow: rgba(148, 180, 193, 0.15);
+  --line-bright: var(--blue-line);
+  --cyan: var(--blue-line);
+  --cyan-glow: rgba(127, 146, 245, 0.20);
   --green: var(--status-healthy);
   --amber: var(--status-degraded);
   --red: var(--status-critical);
   --purple: var(--status-recovering);
 }
 
-[data-theme="light"] {
-  /* Light Theme — "Daylight" (cream / sage / muted green / olive) */
-  --bg-base: #F6F0D7;
-  --bg-surface: #FBF8EC;
-  --bg-surface-raised: #FFFFFF;
-  --border-subtle: rgba(197, 216, 157, 0.45);
-  --border-focus: #89986D;
-  --accent-signal: #89986D;
-  --accent-hover: #9BAA7E;
-  --accent-active: #758459;
-  --text-primary: #213448; /* Shared ink/paper thread */
-  --text-secondary: #5B6653;
-  --text-muted: #7E8B75;
-
-  /* Status Colors remain identical for universal readability */
-  --status-healthy: #7C9A6B;
-  --status-healthy-bg: rgba(124, 154, 107, 0.14);
-  --status-degraded: #C9932F;
-  --status-degraded-bg: rgba(201, 147, 47, 0.14);
-  --status-critical: #C0524D;
-  --status-critical-bg: rgba(192, 82, 77, 0.14);
-  --status-recovering: #547792;
-  --status-recovering-bg: rgba(84, 119, 146, 0.14);
-
-  --cyan-glow: rgba(137, 152, 109, 0.15);
+[data-theme="dark"] {
+  /* Dark Mode option adhering to deep blueprint tones */
+  --paper: #0F172A;
+  --blue-primary: #3B82F6;
+  --blue-deep: #0A1128;
+  --blue-line: #60A5FA;
+  --ink: #F8FAFC;
+  --ink-secondary: #94A3B8;
+  --ink-muted: #64748B;
+  --glass: rgba(15, 23, 42, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --bg-base: #0B1120;
+  --bg-surface: #0F172A;
+  --bg-surface-raised: #1E293B;
+  --border-subtle: rgba(255, 255, 255, 0.10);
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
 }
 
 /* ── Reset & Base Styles ─────────────────────────────────────────────────── */
@@ -89,14 +102,20 @@ html {
 
 body {
   margin: 0;
-  background-color: var(--bg-base);
-  color: var(--text-primary);
+  background-color: var(--paper);
+  /* Faint blueprint grid: 24px squares at 4–6% opacity */
+  background-image:
+    linear-gradient(to right, rgba(43, 63, 209, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(43, 63, 209, 0.045) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-attachment: fixed;
+  color: var(--ink);
   font-family: var(--font-ui);
   font-size: 14px;
   line-height: 1.6;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition: background-color 180ms ease, color 180ms ease;
 }
 
 /* Typography styles */
@@ -112,10 +131,10 @@ code, pre, .mono, [data-mono="true"] {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-ui);
-  font-weight: 600;
-  line-height: 1.3;
+  font-weight: 700;
+  line-height: 1.25;
   margin: 0;
-  color: var(--text-primary);
+  color: var(--ink);
 }
 
 p {
@@ -123,7 +142,7 @@ p {
 }
 
 a {
-  color: var(--accent-signal);
+  color: var(--blue-primary);
   text-decoration: none;
 }
 a:hover {
@@ -131,7 +150,7 @@ a:hover {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent-signal);
+  outline: 2px solid var(--accent-orange);
   outline-offset: 2px;
 }
 
@@ -139,7 +158,7 @@ a:hover {
 .app {
   display: flex;
   min-height: 100vh;
-  background-color: var(--bg-base);
+  background-color: transparent;
 }
 
 .app-body {
@@ -151,25 +170,17 @@ a:hover {
   margin-left: var(--sidebar-width);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 960px) {
   .app-body {
     margin-left: 0;
   }
 }
 
 .main {
-  max-width: 1280px;
   width: 100%;
   margin: 0 auto;
-  padding: 1.5rem 1.5rem 3rem;
+  padding: 0;
   flex: 1;
-}
-
-.content-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.65fr) minmax(320px, 1fr);
-  gap: 1.25rem;
-  padding-bottom: 2rem;
 }
 
 /* Toast notifications */
@@ -180,7 +191,7 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  z-index: 300;
+  z-index: 400;
   pointer-events: none;
 }
 .toast-area > * {
@@ -191,21 +202,19 @@ a:hover {
   background: var(--status-critical-bg);
   border: 1px solid var(--status-critical);
   border-radius: var(--radius);
-  padding: 0.65rem 1rem;
-  font-size: 0.82rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
   color: var(--status-critical);
-  margin-bottom: 1rem;
+  margin: 1rem 1.5rem;
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────────── */
-@media (max-width: 1100px) {
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .main {
-    padding: 1rem;
+/* ── Accessibility & Reduced Motion ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

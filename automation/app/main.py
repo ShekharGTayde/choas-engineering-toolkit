@@ -1,20 +1,26 @@
 import asyncio
+import base64
 import csv
+import hashlib
+import hmac
 import json
 import os
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field, model_validator
 
 CONTROLLER_URL = os.getenv("CHAOS_CONTROLLER_URL", "http://chaos-controller:4000")
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "http://ai-service:8000")
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
+BLACKBOX_URL = os.getenv("BLACKBOX_EXPORTER_URL", "http://blackbox-exporter:9115")
 ORDER_SERVICE_URL = os.getenv("ORDER_SERVICE_URL", "http://order-service:3000")
+JWT_SECRET = os.getenv("JWT_SECRET", "chaosguard_jwt_secret_dev_key_2026")
 DATA_DIRECTORY = Path(os.getenv("DATA_DIRECTORY", "/app/data"))
 EXPERIMENTS_CSV = DATA_DIRECTORY / "experiments.csv"
 ANOMALY_CSV = DATA_DIRECTORY / "anomaly_results.csv"
@@ -23,6 +29,20 @@ RUNS_JSON = DATA_DIRECTORY / "full_experiment_runs.json"
 ALLOWED_SERVICES = {"payment-service", "order-service", "notification-service"}
 ALLOWED_FAILURES = {"stop", "restart", "latency"}
 ALLOWED_LATENCIES = {500, 1000, 2000, 5000}
+
+def generate_internal_operator_token() -> str:
+    header = base64.urlsafe_b64encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode()).decode().rstrip("=")
+    exp = int(time.time()) + 3600
+    body = base64.urlsafe_b64encode(json.dumps({
+        "id": "usr_automation_service",
+        "name": "Automation Service",
+        "role": "Operator",
+        "exp": exp
+    }).encode()).decode().rstrip("=")
+    sig = base64.urlsafe_b64encode(
+        hmac.new(JWT_SECRET.encode(), f"{header}.{body}".encode(), hashlib.sha256).digest()
+    ).decode().rstrip("=")
+    return f"{header}.{body}.{sig}"
 MAX_DURATION_SECONDS = 60
 TRAFFIC_REQUESTS = 10
 STATUS_FLOW = ["QUEUED", "RUNNING", "FAULT_INJECTED", "COLLECTING_METRICS", "ANALYZING", "AI_ANALYSIS", "COMPLETED"]
@@ -69,12 +89,17 @@ async def get_json(client: httpx.AsyncClient, url: str, **kwargs: Any) -> Any:
 
 
 async def prometheus_value(client: httpx.AsyncClient, query: str) -> float:
-    result = await get_json(client, f"{PROMETHEUS_URL}/api/v1/query", params={"query": query})
-    values = result.get("data", {}).get("result", [])
-    return float(values[0]["value"][1]) if values else 0.0
+    """Execute a single instant PromQL query; return 0.0 if no series found."""
+    try:
+        result = await get_json(client, f"{PROMETHEUS_URL}/api/v1/query", params={"query": query})
+        values = result.get("data", {}).get("result", [])
+        return float(values[0]["value"][1]) if values else 0.0
+    except Exception:
+        return 0.0
 
 
 async def prometheus_snapshot(client: httpx.AsyncClient) -> dict[str, float]:
+    """Snapshot internal docker-compose service counters (requests + errors)."""
     queries = {
         "orderRequests": 'sum(http_requests_total{job="order-service"})',
         "orderErrors": 'sum(http_errors_total{job="order-service"})',
@@ -84,6 +109,61 @@ async def prometheus_snapshot(client: httpx.AsyncClient) -> dict[str, float]:
         "notificationErrors": 'sum(http_errors_total{job="notification-service"})',
     }
     return {name: await prometheus_value(client, query) for name, query in queries.items()}
+
+
+async def prometheus_metrics_by_source(
+    client: httpx.AsyncClient,
+    target_name: str,
+    target_source: str,
+) -> dict[str, float]:
+    """
+    Return Prometheus metrics parameterized by target source.
+
+    - docker-compose  → query prom-client counters from the named job
+      (http_requests_total, http_errors_total, http_request_duration_seconds p95)
+    - external-url    → query Blackbox Exporter probe results
+      (probe_success, probe_duration_seconds) for the registered health URL;
+      the job name 'blackbox-external' is the dedicated Prometheus scrape job.
+    """
+    if target_source == "external-url":
+        # Blackbox Exporter metrics — keyed on job label set by relabel_configs
+        probe_success = await prometheus_value(
+            client,
+            f'probe_success{{job="blackbox-external",instance="{target_name}"}}',
+        )
+        probe_duration = await prometheus_value(
+            client,
+            f'probe_duration_seconds{{job="blackbox-external",instance="{target_name}"}}',
+        )
+        return {
+            "source": "external-url",
+            "target": target_name,
+            "probeSuccess": probe_success,
+            "probeDurationSeconds": round(probe_duration, 4),
+            "probeSuccessPercent": round(probe_success * 100, 1),
+        }
+    else:
+        # docker-compose internal target — prom-client instrumented
+        job = target_name  # Prometheus job_name matches service name
+        requests = await prometheus_value(
+            client, f'sum(http_requests_total{{job="{job}"}})',
+        )
+        errors = await prometheus_value(
+            client, f'sum(http_errors_total{{job="{job}"}})',
+        )
+        p95 = await prometheus_value(
+            client,
+            f'histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{{job="{job}"}}[1m])) by (le))',
+        )
+        error_rate = round((errors / requests) * 100, 2) if requests > 0 else 0.0
+        return {
+            "source": "docker-compose",
+            "target": target_name,
+            "requests": requests,
+            "errors": errors,
+            "errorRatePercent": error_rate,
+            "p95LatencySeconds": round(p95, 4),
+        }
 
 
 async def send_order_traffic(client: httpx.AsyncClient, duration_seconds: int) -> list[dict[str, Any]]:
@@ -144,13 +224,20 @@ def csv_record(file_path: Path, experiment_id: str) -> dict[str, str]:
         return next((row for row in csv.DictReader(file) if row["experimentId"] == experiment_id), {})
 
 
-async def execute(run: dict[str, Any], request: RunRequest) -> None:
+async def execute(run: dict[str, Any], request: RunRequest, auth_header: str | None = None) -> None:
     async with run_lock:
         try:
             set_status(run, "RUNNING")
+            token_header = auth_header if auth_header else f"Bearer {generate_internal_operator_token()}"
             async with httpx.AsyncClient(timeout=httpx.Timeout(request.durationSeconds + 25)) as client:
                 before = await prometheus_snapshot(client)
-                controller_request = asyncio.create_task(client.post(f"{CONTROLLER_URL}/experiments", json=request.model_dump()))
+                controller_request = asyncio.create_task(
+                    client.post(
+                        f"{CONTROLLER_URL}/experiments",
+                        json=request.model_dump(),
+                        headers={"Authorization": token_header}
+                    )
+                )
                 set_status(run, "FAULT_INJECTED")
                 await asyncio.sleep(0.25)
                 traffic = await send_order_traffic(client, request.durationSeconds)
@@ -184,12 +271,13 @@ async def health() -> dict[str, str]: return {"service": "experiment-automation"
 
 
 @app.post("/run-full-experiment", status_code=202)
-async def run_full_experiment(request: RunRequest) -> dict[str, Any]:
+async def run_full_experiment(request: RunRequest, http_request: Request) -> dict[str, Any]:
     if run_lock.locked() or any(run.get("status") not in {"COMPLETED", "FAILED"} for run in runs.values()):
         raise HTTPException(status_code=409, detail="An experiment is already running")
+    auth_header = http_request.headers.get("authorization")
     run_id = str(uuid.uuid4())
     run = {"runId": run_id, "request": request.model_dump(), "executionStatus": "QUEUED", "status": "QUEUED", "statusHistory": [{"status": "QUEUED", "at": now()}], "createdAt": now()}
-    runs[run_id] = run; persist_runs(); asyncio.create_task(execute(run, request))
+    runs[run_id] = run; persist_runs(); asyncio.create_task(execute(run, request, auth_header))
     return run
 
 
@@ -197,3 +285,38 @@ async def run_full_experiment(request: RunRequest) -> dict[str, Any]:
 async def get_run(run_id: str) -> dict[str, Any]:
     if run_id not in runs: raise HTTPException(status_code=404, detail="Experiment run not found")
     return runs[run_id]
+
+
+@app.get("/metrics")
+async def get_metrics_by_source(
+    target: str,
+    source: str = "docker-compose",
+) -> dict[str, Any]:
+    """
+    Source-parameterized PromQL query layer (Phase 6).
+
+    Query params:
+      - target : service name (docker-compose) or health probe URL (external-url)
+      - source : 'docker-compose' | 'external-url'  (default: docker-compose)
+
+    Returns different metric shapes per source:
+      docker-compose  → requests, errors, errorRatePercent, p95LatencySeconds
+      external-url    → probeSuccess, probeDurationSeconds, probeSuccessPercent
+    """
+    if source not in {"docker-compose", "external-url"}:
+        raise HTTPException(status_code=400, detail="source must be 'docker-compose' or 'external-url'")
+    if not target:
+        raise HTTPException(status_code=400, detail="target is required")
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+        return await prometheus_metrics_by_source(client, target, source)
+
+
+@app.get("/metrics/snapshot")
+async def get_internal_snapshot() -> dict[str, Any]:
+    """
+    Full snapshot of all internal docker-compose service metrics in one call.
+    Equivalent to the prometheus_snapshot() used before each experiment run.
+    """
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+        snapshot = await prometheus_snapshot(client)
+    return {"source": "docker-compose", "snapshot": snapshot, "capturedAt": now()}

@@ -2,10 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './context/AuthContext.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import TopBar from './components/TopBar.jsx';
-import ServiceHealthStrip from './components/ServiceHealthStrip.jsx';
-import SummaryCards from './components/SummaryCards.jsx';
-import ExperimentTable from './components/ExperimentTable.jsx';
-import ExperimentDetail from './components/ExperimentDetail.jsx';
+import DashboardView from './components/Dashboard.jsx';
 import RunExperimentDialog from './components/RunExperimentDialog.jsx';
 import ServersPage from './components/ServersPage.jsx';
 import LoadTestingPage from './components/LoadTestingPage.jsx';
@@ -34,6 +31,7 @@ function AuthRouter() {
 }
 
 function Dashboard() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -126,24 +124,23 @@ function Dashboard() {
         <main className="main">
           {/* ── Dashboard tab ── */}
           {activeTab === 'dashboard' && data && (
-            <>
-              <ServiceHealthStrip services={data.services} />
-              <SummaryCards metrics={data.metrics} />
-              <div className="content-grid">
-                <ExperimentTable
-                  experiments={data.experiments}
-                  selected={selected}
-                  onSelect={(exp) => setSelected(exp)}
-                  search={search}
-                  onSearchChange={setSearch}
-                  riskFilter={riskFilter}
-                  onRiskFilterChange={setRiskFilter}
-                  serviceFilter={serviceFilter}
-                  onServiceFilterChange={setServiceFilter}
-                />
-                <ExperimentDetail experiment={selected} />
-              </div>
-            </>
+            <DashboardView
+              data={data}
+              loading={loading}
+              error={error}
+              selected={selected}
+              onSelect={setSelected}
+              search={search}
+              onSearchChange={setSearch}
+              riskFilter={riskFilter}
+              onRiskFilterChange={setRiskFilter}
+              serviceFilter={serviceFilter}
+              onServiceFilterChange={setServiceFilter}
+              onRunExperiment={() => setRunDialogOpen(true)}
+              onRefresh={handleRefresh}
+              onNavigateTab={setActiveTab}
+              user={user}
+            />
           )}
 
           {/* ── Servers tab ── */}

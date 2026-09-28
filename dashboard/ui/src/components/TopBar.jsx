@@ -16,11 +16,11 @@ export default function TopBar({
   const getPageTitle = () => {
     switch (activeTab) {
       case 'servers':
-        return 'Target Systems & Monitored Servers';
+        return 'TARGET SYSTEMS & MONITORED SERVERS';
       case 'load-testing':
-        return 'Pre-Deployment Load Testing';
+        return 'PRE-DEPLOYMENT LOAD VERIFICATION';
       default:
-        return 'Chaos Control Room & Resilience Experiments';
+        return 'RESILIENCE CONTROL ROOM & CHAOS HARNESS';
     }
   };
 
@@ -41,68 +41,54 @@ export default function TopBar({
         </button>
 
         <div className={styles.titleArea}>
+          <div className={styles.moduleTag}>[SYS.CONSOLE // 01-RUNNER]</div>
           <h1 className={styles.pageTitle}>{getPageTitle()}</h1>
-          <div className={styles.metaRow}>
-            <span className={styles.statusPill} data-status={systemStatus.toLowerCase()}>
-              <span className={styles.statusDot}></span>
-              <span>Cluster {systemStatus}</span>
-            </span>
-            <span className={styles.separator}>/</span>
-            <span className={styles.roleTag} data-role={user?.role}>
-              {user?.role || 'Operator'}
-            </span>
-          </div>
         </div>
       </div>
 
-      <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.themeToggleBtn}
-          onClick={toggleTheme}
-          title={`Switch to ${isDark ? 'Daylight (Light)' : 'Night Ops (Dark)'} theme`}
-        >
-          {isDark ? '☀️ Light' : '🌙 Dark'}
-        </button>
+      <div className={styles.right}>
+        <div className={styles.statusPill} data-status={systemStatus.toLowerCase()}>
+          <span className={styles.statusDot}></span>
+          <span className={styles.statusLabel}>CLUSTER {systemStatus}</span>
+        </div>
 
-        <button
-          type="button"
-          className={styles.btnSecondary}
-          onClick={onRefresh}
-          disabled={loading}
-          aria-label="Refresh data"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={loading ? styles.spinning : undefined}
+        <div className={styles.actions}>
+          {/* Black Pill: Refresh action with rotating icon */}
+          <button
+            type="button"
+            className={styles.pillBlack}
+            onClick={onRefresh}
+            disabled={loading}
+            aria-label="Refresh telemetry data"
           >
-            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-            <path d="M21 3v5h-5" />
-            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-            <path d="M8 16H3v5" />
-          </svg>
-          <span>{loading ? 'Refreshing…' : 'Refresh'}</span>
-        </button>
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={loading ? styles.spinning : undefined}
+            >
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
+            </svg>
+            <span>{loading ? 'SYNCING…' : 'REFRESH'}</span>
+          </button>
 
-        <button
-          type="button"
-          className={styles.btnPrimary}
-          onClick={onRunExperiment}
-          disabled={!isOperator}
-          title={!isOperator ? 'Viewer role is read-only. Operator role required to run experiments.' : 'Configure and trigger chaos experiment'}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-            <polygon points="5 3 19 12 5 21 5 3" />
-          </svg>
-          <span>Run Experiment</span>
-        </button>
+          {/* Orange Pill: Primary Action with arrow icon ↗ */}
+          <button
+            type="button"
+            className={styles.pillOrange}
+            onClick={onRunExperiment}
+            disabled={!isOperator}
+            title={!isOperator ? 'Operator role required to run experiments.' : 'Trigger chaos experiment'}
+          >
+            <span>RUN EXPERIMENT</span>
+            <span className={styles.arrowIcon}>↗</span>
+          </button>
+        </div>
       </div>
     </header>
   );

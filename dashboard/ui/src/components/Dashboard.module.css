@@ -1,0 +1,761 @@
+/* ── Dashboard: Blueprint / Technical-Editorial Theme ─────────────────── */
+
+.dashboard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Blueprint Corner Crosshair Marks */
+.crosshair {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1;
+  color: var(--blue-primary);
+  opacity: 0.5;
+  user-select: none;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.crosshairLight {
+  color: #7F92F5;
+  opacity: 0.6;
+}
+
+.tl { top: 8px; left: 10px; }
+.tr { top: 8px; right: 10px; }
+.bl { bottom: 8px; left: 10px; }
+.br { bottom: 8px; right: 10px; }
+
+/* ── Section Bands (Alternating Paper & Deep-Blue) ───────────────────────── */
+.bandPaper {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(to right, rgba(43, 63, 209, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(43, 63, 209, 0.045) 1px, transparent 1px);
+  background-size: 24px 24px;
+  padding: 3rem 2.5rem;
+  border-bottom: 1px solid rgba(13, 17, 28, 0.12);
+  position: relative;
+}
+
+.bandDeepBlue {
+  background-color: var(--blue-deep);
+  background-image:
+    linear-gradient(to right, rgba(127, 146, 245, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(127, 146, 245, 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+  padding: 3.5rem 2.5rem;
+  border-bottom: 1px solid rgba(127, 146, 245, 0.25);
+  color: #FFFFFF;
+  position: relative;
+}
+
+.inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Hero / Masthead Section ─────────────────────────────────────────────── */
+.heroSection {
+  position: relative;
+  padding: 3rem 2.5rem 2.5rem;
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(to right, rgba(43, 63, 209, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(43, 63, 209, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+  border-bottom: 1px solid rgba(13, 17, 28, 0.12);
+  overflow: hidden;
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(360px, 1fr);
+  gap: 2.5rem;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.heroLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.heroTagRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.heroTag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--blue-primary);
+  text-transform: uppercase;
+}
+
+.heroCoord {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.05em;
+}
+
+.heroTitle {
+  font-family: var(--font-display);
+  font-size: 5rem;
+  font-weight: 900;
+  color: var(--blue-primary);
+  letter-spacing: 0.02em;
+  line-height: 0.9;
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow: 0 4px 24px rgba(43, 63, 209, 0.1);
+}
+
+.heroSubtitle {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  margin-top: 0.5rem;
+}
+
+.heroDescription {
+  font-family: var(--font-ui);
+  font-size: 0.92rem;
+  color: var(--ink-secondary);
+  line-height: 1.6;
+  max-width: 58ch;
+  margin-top: 1rem;
+}
+
+/* Floating Glass Overlay Card (matching the reference image top card) */
+.heroGlassCard {
+  position: relative;
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card);
+  padding: 1.75rem 1.5rem;
+  box-shadow: 0 12px 40px rgba(43, 63, 209, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.glassCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.operatorBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.operatorAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+  background: var(--blue-primary);
+  color: #FFFFFF;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 8px rgba(43, 63, 209, 0.3);
+}
+
+.operatorMeta {
+  display: flex;
+  flex-direction: column;
+}
+
+.operatorName {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.operatorRole {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.tagOrange {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--accent-orange);
+  color: #FFFFFF;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 8px rgba(255, 106, 43, 0.25);
+}
+
+.glassCardBody {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem;
+  padding: 0.85rem 0;
+  border-top: 1px dashed rgba(43, 63, 209, 0.15);
+  border-bottom: 1px dashed rgba(43, 63, 209, 0.15);
+}
+
+.metricItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.metricKey {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metricVal {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+  margin-top: 0.15rem;
+}
+
+.glassCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.barcodeBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.barcodeLines {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 22px;
+}
+
+.barThin {
+  width: 1.5px;
+  height: 100%;
+  background: var(--ink);
+}
+
+.barThick {
+  width: 3.5px;
+  height: 100%;
+  background: var(--ink);
+}
+
+.barcodeCode {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.1em;
+}
+
+/* ── Section Header Components (01, 02, 03, 04) ─────────────────────────── */
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid rgba(13, 17, 28, 0.12);
+  padding-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.sectionHeaderLight {
+  border-bottom: 1px solid rgba(127, 146, 245, 0.25);
+}
+
+/* Large numeric section marker in heavy condensed display face */
+.markerNumber {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--blue-primary);
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+}
+
+.markerNumberLight {
+  color: #7F92F5;
+}
+
+.sectionHeaderContent {
+  flex: 1;
+  min-width: 260px;
+}
+
+.sectionTag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--blue-primary);
+  text-transform: uppercase;
+}
+
+.sectionTagLight {
+  color: #BAC7FF;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+  text-transform: uppercase;
+  margin-top: 0.2rem;
+}
+
+.sectionTitleLight {
+  color: #FFFFFF;
+}
+
+.sectionSubtitle {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--ink-secondary);
+  margin-top: 0.35rem;
+  line-height: 1.45;
+}
+
+.sectionSubtitleLight {
+  color: #BAC7FF;
+}
+
+/* ── Block 02: Architecture Blueprint Wireframe Cards ───────────────────── */
+.wireframeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.wireframeCard {
+  position: relative;
+  background: rgba(30, 50, 181, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(127, 146, 245, 0.35);
+  border-radius: var(--radius-card);
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.wireframeCard:hover {
+  background: rgba(43, 63, 209, 0.6);
+  border-color: #7F92F5;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.cardRefTag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #7F92F5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.wireframeTitle {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.wireframeBullets {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.bulletItem {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: #BAC7FF;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bulletDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--accent-orange);
+}
+
+.wireframeFooter {
+  margin-top: auto;
+  padding-top: 0.85rem;
+  border-top: 1px dashed rgba(127, 146, 245, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wireframeStatus {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 0.05em;
+}
+
+.circuitPill {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background: rgba(16, 185, 129, 0.2);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+/* ── Block 03: Activity Content Grid ────────────────────────────────────── */
+.activityGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(340px, 1fr);
+  gap: 1.75rem;
+  align-items: flex-start;
+}
+
+/* ── Block 04: Actions Grid ─────────────────────────────────────────────── */
+.actionsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.actionCard {
+  position: relative;
+  background: rgba(30, 50, 181, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(127, 146, 245, 0.35);
+  border-radius: var(--radius-card);
+  padding: 1.5rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 220px;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.actionCard:hover {
+  background: rgba(43, 63, 209, 0.65);
+  border-color: #7F92F5;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.actionTop {
+  display: flex;
+  flex-direction: column;
+}
+
+.actionRefTag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #7F92F5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.actionTitle {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  margin-top: 0.35rem;
+}
+
+.actionDesc {
+  font-family: var(--font-ui);
+  font-size: 0.76rem;
+  color: #BAC7FF;
+  line-height: 1.45;
+  margin-top: 0.5rem;
+}
+
+.actionBottom {
+  margin-top: 1.25rem;
+}
+
+/* ── Pill Buttons (Black and Orange per Spec) ────────────────────────────── */
+.pillBtnBlack {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--ink);
+  color: #FFFFFF;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-pill);
+  padding: 0.55rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pillBtnBlack:hover {
+  background-color: #1E293B;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(13, 17, 28, 0.2);
+}
+
+.pillBtnOrange {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--accent-orange);
+  color: #FFFFFF;
+  border: 1px solid var(--accent-orange);
+  border-radius: var(--radius-pill);
+  padding: 0.55rem 1.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255, 106, 43, 0.35);
+  transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pillBtnOrange:hover {
+  background-color: var(--accent-orange-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 106, 43, 0.5);
+}
+
+.pillBtnGhost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(127, 146, 245, 0.15);
+  color: #FFFFFF;
+  border: 1px solid rgba(127, 146, 245, 0.35);
+  border-radius: var(--radius-pill);
+  padding: 0.55rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.pillBtnGhost:hover {
+  background-color: rgba(127, 146, 245, 0.3);
+  border-color: #7F92F5;
+  transform: translateY(-1px);
+}
+
+.arrowIcon {
+  font-family: system-ui, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1;
+  transition: transform 160ms ease;
+}
+
+.pillBtnOrange:hover .arrowIcon,
+.pillBtnBlack:hover .arrowIcon,
+.pillBtnGhost:hover .arrowIcon {
+  transform: translate(2px, -2px);
+}
+
+/* ── Floating Pill Dock Bar (matching reference screenshot bottom bar) ──── */
+.floatingDock {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 40px rgba(10, 20, 80, 0.15);
+  border-radius: var(--radius-pill);
+  padding: 0.55rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  z-index: 120;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.floatingDock:hover {
+  box-shadow: 0 14px 48px rgba(10, 20, 80, 0.22);
+}
+
+.dockStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.05em;
+}
+
+.dockDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--status-healthy);
+  box-shadow: 0 0 8px var(--status-healthy);
+}
+
+.dockDivider {
+  width: 1px;
+  height: 18px;
+  background-color: rgba(13, 17, 28, 0.15);
+}
+
+.dockRefreshBtn {
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: var(--radius-pill);
+  transition: color 140ms ease;
+}
+
+.dockRefreshBtn:hover {
+  color: var(--blue-primary);
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Responsive Queries ──────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .heroTitle {
+    font-size: 3.8rem;
+  }
+
+  .activityGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actionsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .heroGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .wireframeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .bandPaper, .bandDeepBlue, .heroSection {
+    padding: 2rem 1.25rem;
+  }
+
+  .heroTitle {
+    font-size: 3rem;
+  }
+
+  .markerNumber {
+    font-size: 3rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .actionsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .floatingDock {
+    width: 90%;
+    justify-content: space-between;
+    bottom: 1rem;
+    padding: 0.5rem 1rem;
+  }
+}

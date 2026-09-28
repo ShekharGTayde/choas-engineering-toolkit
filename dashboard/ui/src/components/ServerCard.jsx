@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import styles from './ServerCard.module.css';
 
@@ -22,108 +23,145 @@ function timeAgo(isoString) {
 function HistorySparkline({ history }) {
   if (!history || history.length === 0) return null;
   const recent = [...history].reverse().slice(0, 20);
+  const upCount = recent.filter((h) => h.status === 'UP').length;
+  const upPercent = Math.round((upCount / recent.length) * 100);
+
   return (
-    <div className={styles.sparkline} title="Last 20 checks">
-      {recent.map((h, i) => (
-        <span
-          key={i}
-          className={`${styles.spark} ${h.status === 'UP' ? styles.sparkUp : styles.sparkDown}`}
-          title={`${h.status} · ${h.checkedAt ? new Date(h.checkedAt).toLocaleTimeString() : '—'}`}
-        />
-      ))}
+    <div className={styles.historyRow}>
+      <span className={styles.historyLabel}>RECENT 20</span>
+      <div className={styles.sparkline} title="Last 20 health checks">
+        {recent.map((h, i) => (
+          <span
+            key={i}
+            className={`${styles.spark} ${h.status === 'UP' ? styles.sparkUp : styles.sparkDown}`}
+            title={`${h.status} · ${h.checkedAt ? new Date(h.checkedAt).toLocaleTimeString() : '—'}`}
+          />
+        ))}
+      </div>
+      <span className={styles.uptimePercent}>{upPercent}% UPTIME</span>
     </div>
   );
 }
 
 export default function ServerCard({ server, checking, onCheck, onDelete }) {
   const { isOperator } = useAuth();
+  const [copied, setCopied] = useState(false);
   const isUp = server.status === 'UP';
   const envClass = ENV_COLORS[server.environment] || 'dev';
 
+  const copyUrl = () => {
+    navigator.clipboard.writeText(server.healthUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className={`${styles.card} ${isUp ? styles.cardUp : styles.cardDown}`}>
-      {/* Card header */}
+    <article className={`${styles.card} ${isUp ? styles.cardUp : styles.cardDown}`}>
+      {/* Blueprint Corner Crosshairs */}
+      <span className={`${styles.crosshair} ${styles.tl}`}>+</span>
+      <span className={`${styles.crosshair} ${styles.tr}`}>+</span>
+      <span className={`${styles.crosshair} ${styles.bl}`}>+</span>
+      <span className={`${styles.crosshair} ${styles.br}`}>+</span>
+
+      {/* Card Header */}
       <div className={styles.header}>
-        <div className={styles.nameRow}>
-          <span className={`${styles.statusDot} ${isUp ? styles.dotUp : styles.dotDown}`} />
-          <h3 className={styles.name}>{server.name}</h3>
+        <div className={styles.nameCol}>
+          <span className={styles.nodeCode}>
+            [NODE // {server.environment?.toUpperCase() || 'DEV'}]
+          </span>
+          <div className={styles.nameRow}>
+            <span className={`${styles.statusDot} ${isUp ? styles.dotUp : styles.dotDown}`} />
+            <h3 className={styles.name}>{server.name}</h3>
+          </div>
         </div>
+
         <span className={`${styles.envBadge} ${styles[envClass]}`}>
           {server.environment}
         </span>
       </div>
 
-      {/* URL */}
-      <div className={styles.urlRow}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {/* URL Technical Codebox */}
+      <div className={styles.urlBox}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
           <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
         </svg>
         <span className={styles.url} title={server.healthUrl}>{server.healthUrl}</span>
+        <button
+          type="button"
+          className={styles.copyBtn}
+          onClick={copyUrl}
+          title="Copy URL"
+          aria-label="Copy server health endpoint URL"
+        >
+          {copied ? 'COPIED' : 'COPY'}
+        </button>
       </div>
 
-      {/* Quick stats */}
+      {/* Hairline Metrics Grid */}
       <div className={styles.metrics}>
         <div className={styles.metric}>
-          <span className={styles.metricLabel}>Status</span>
+          <span className={styles.metricLabel}>STATUS</span>
           <strong className={isUp ? styles.metricUp : styles.metricDown}>
             {server.status}
           </strong>
         </div>
         <div className={styles.metric}>
-          <span className={styles.metricLabel}>HTTP Code</span>
+          <span className={styles.metricLabel}>HTTP CODE</span>
           <strong>{server.lastHttpStatus ?? '—'}</strong>
         </div>
         <div className={styles.metric}>
-          <span className={styles.metricLabel}>Latency</span>
-          <strong>{server.lastLatencyMs != null ? `${server.lastLatencyMs} ms` : '—'}</strong>
+          <span className={styles.metricLabel}>LATENCY</span>
+          <strong style={{ color: 'var(--blue-primary)' }}>
+            {server.lastLatencyMs != null ? `${server.lastLatencyMs} ms` : '—'}
+          </strong>
         </div>
         <div className={styles.metric}>
-          <span className={styles.metricLabel}>Last Probe</span>
+          <span className={styles.metricLabel}>LAST PROBE</span>
           <strong title={server.lastCheckedAt}>{timeAgo(server.lastCheckedAt)}</strong>
         </div>
       </div>
 
-      {/* Error message if down */}
+      {/* Error Callout (e.g. SSRF Protection) */}
       {!isUp && server.lastError && (
         <div className={styles.errorMsg}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <span>{server.lastError}</span>
+          <div className={styles.errorText}>
+            <span className={styles.errorCode}>
+              {server.lastError.includes('blocked') ? '[ERR.SECURITY_SSRF_BLOCKED]' : '[ERR.PROBE_FAILED]'}
+            </span>
+            <span>{server.lastError}</span>
+          </div>
         </div>
       )}
 
-      {/* History sparkline */}
-      <div className={styles.historyRow}>
-        <span className={styles.historyLabel}>Recent 20</span>
-        <HistorySparkline history={server.history} />
-      </div>
+      {/* History Sparkline */}
+      <HistorySparkline history={server.history} />
 
-      {/* Actions */}
+      {/* Actions with Pill Buttons */}
       <div className={styles.actions}>
         <button
           type="button"
           className={styles.btnCheck}
           onClick={() => onCheck(server.id)}
           disabled={checking}
+          aria-label={`Trigger health probe for ${server.name}`}
         >
           {checking ? (
             <>
               <span className={styles.miniSpinner} />
-              <span>Probing…</span>
+              <span>PROBING…</span>
             </>
           ) : (
             <>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                <path d="M21 3v5h-5" />
-                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                <path d="M8 16H3v5" />
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
               </svg>
-              <span>Check Now</span>
+              <span>CHECK NOW</span>
             </>
           )}
         </button>
@@ -141,9 +179,9 @@ export default function ServerCard({ server, checking, onCheck, onDelete }) {
             <line x1="10" y1="11" x2="10" y2="17" />
             <line x1="14" y1="11" x2="14" y2="17" />
           </svg>
-          <span>Remove</span>
+          <span>REMOVE</span>
         </button>
       </div>
-    </div>
+    </article>
   );
 }

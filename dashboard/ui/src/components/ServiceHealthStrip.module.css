@@ -1,95 +1,246 @@
-.strip {
+/* ── ServiceHealthStrip: Blueprint Nodes ───────────────────────────────── */
+
+.stripContainer {
+  margin-bottom: 2rem;
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card);
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 4px 20px rgba(43, 63, 209, 0.04);
+}
+
+.stripHeader {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius);
-  padding: 0.75rem 1.25rem;
+  justify-content: space-between;
+  padding-bottom: 1rem;
   margin-bottom: 1.25rem;
-  transition: background-color 150ms ease, border-color 150ms ease;
+  border-bottom: 1px dashed rgba(43, 63, 209, 0.15);
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
-.label {
+.tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--blue-primary);
+  text-transform: uppercase;
+}
+
+.headerTitle {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-ui);
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  white-space: nowrap;
+  gap: 0.6rem;
 }
 
-.pulseDot {
-  width: 7px;
-  height: 7px;
+.titleText {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.pulseHealthy {
+.dotUp {
+  background-color: var(--status-healthy);
+  box-shadow: 0 0 8px var(--status-healthy);
+}
+
+.dotDegraded {
+  background-color: var(--status-critical);
+  box-shadow: 0 0 8px var(--status-critical);
+}
+
+.metaBadge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-pill);
+  background-color: rgba(43, 63, 209, 0.08);
+  color: var(--blue-primary);
+  border: 1px solid rgba(43, 63, 209, 0.2);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.card {
+  position: relative;
+  background: #FFFFFF;
+  border: 1px solid rgba(13, 17, 28, 0.12);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--blue-primary);
+  box-shadow: 0 6px 20px rgba(43, 63, 209, 0.08);
+}
+
+.cardUp {
+  border-left: 3px solid var(--status-healthy);
+}
+
+.cardDown {
+  border-left: 3px solid var(--status-critical);
+}
+
+.crosshair {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--blue-primary);
+  opacity: 0.4;
+  user-select: none;
+}
+
+.tl { top: 5px; left: 6px; }
+.tr { top: 5px; right: 6px; }
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.nodeCode {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--blue-primary);
+  letter-spacing: 0.06em;
+}
+
+.protocol {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--ink-muted);
+}
+
+.cardMain {
+  margin-bottom: 0.75rem;
+}
+
+.serviceName {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.serviceRole {
+  font-family: var(--font-ui);
+  font-size: 0.74rem;
+  color: var(--ink-secondary);
+  line-height: 1.4;
+  margin-top: 0.2rem;
+}
+
+.cardBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(13, 17, 28, 0.06);
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.livePulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.pulseGreen {
   background-color: var(--status-healthy);
   box-shadow: 0 0 6px var(--status-healthy);
 }
 
-.pulseDegraded {
+.pulseRed {
   background-color: var(--status-critical);
   box-shadow: 0 0 6px var(--status-critical);
 }
 
-.services {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.service {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.35rem 0.75rem;
-  background-color: var(--bg-base);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  font-size: 0.8rem;
-}
-
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.serviceName {
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.statusText {
+.statusWord {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 500;
-  margin-left: 0.15rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink);
 }
 
-.up .dot {
-  background-color: var(--status-healthy);
-}
-.up .statusText {
-  color: var(--status-healthy);
+.latencyTag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--blue-primary);
 }
 
-.down {
-  border-color: rgba(192, 82, 77, 0.4);
-  background-color: var(--status-critical-bg);
+/* Skeleton Loading State */
+.stripLoading {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 2rem;
 }
-.down .dot {
-  background-color: var(--status-critical);
-  box-shadow: 0 0 5px var(--status-critical);
+
+.skeletonBlock {
+  height: 120px;
+  background: rgba(43, 63, 209, 0.06);
+  border-radius: var(--radius);
+  animation: pulse 1.5s ease-in-out infinite;
 }
-.down .statusText {
-  color: var(--status-critical);
+
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+.emptyState {
+  grid-column: 1 / -1;
+  padding: 2rem;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }

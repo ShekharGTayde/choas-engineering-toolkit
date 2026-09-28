@@ -38,6 +38,11 @@ class SuggestedExperiment(BaseModel):
 
 class ExperimentAnalysisResponse(BaseModel):
     experimentId: str
+    # 3-state field: how was this analysis produced?
+    # no-anomaly        → ML said NORMAL; LLM skipped; baseline report only
+    # ai-generated      → ML detected ANOMALY and Gemini succeeded
+    # rule-based-fallback → ML detected ANOMALY but Gemini call failed; rule engine used
+    analysisSource: Literal["no-anomaly", "ai-generated", "rule-based-fallback"] = "ai-generated"
     failureSummary: str
     severityExplanation: str
     observedBehavior: list[str]

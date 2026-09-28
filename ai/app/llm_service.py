@@ -75,4 +75,7 @@ class LlmService:
 
         if analysis.experimentId != experiment.experimentId:
             raise LlmServiceError("Gemini response experimentId does not match request")
+
+        # Stamp the source so downstream consumers know this came from the LLM
+        analysis = analysis.model_copy(update={"analysisSource": "ai-generated"})
         return analysis

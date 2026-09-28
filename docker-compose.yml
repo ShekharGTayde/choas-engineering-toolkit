@@ -5,6 +5,10 @@ services:
     container_name: payment-service-container
     ports:
       - "3000:3000"
+    labels:
+      - "chaosguard.target=true"
+      - "chaosguard.name=payment-service"
+      - "chaosguard.port=3000"
 
   order-service:
     build: ./order-service
@@ -14,6 +18,10 @@ services:
       - "3001:3000"
     depends_on:
       - payment-service
+    labels:
+      - "chaosguard.target=true"
+      - "chaosguard.name=order-service"
+      - "chaosguard.port=3000"
 
   notification-service:
     build: ./notification-service
@@ -23,6 +31,10 @@ services:
       - "3002:3000"
     depends_on:
       - order-service
+    labels:
+      - "chaosguard.target=true"
+      - "chaosguard.name=notification-service"
+      - "chaosguard.port=3000"
 
   chaos-controller:
     build: ./chaos-controller
@@ -30,6 +42,8 @@ services:
     container_name: chaos-controller-container
     ports:
       - "127.0.0.1:4000:4000"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-chaosguard_jwt_secret_dev_key_2026}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/app/data
@@ -50,6 +64,14 @@ services:
       - order-service
       - notification-service
 
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    container_name: blackbox-exporter
+    ports:
+      - "127.0.0.1:9115:9115"
+    volumes:
+      - ./blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+
   ai-service:
     build: ./ai
     container_name: ai-analysis-service
@@ -69,6 +91,7 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
     environment:
+      JWT_SECRET: ${JWT_SECRET:-chaosguard_jwt_secret_dev_key_2026}
       CHAOS_CONTROLLER_URL: http://chaos-controller:4000
       AI_SERVICE_URL: http://ai-service:8000
       AUTOMATION_SERVICE_URL: http://automation-service:8100
@@ -113,9 +136,11 @@ services:
     ports:
       - "127.0.0.1:8100:8100"
     environment:
+      JWT_SECRET: ${JWT_SECRET:-chaosguard_jwt_secret_dev_key_2026}
       CHAOS_CONTROLLER_URL: http://chaos-controller:4000
       AI_SERVICE_URL: http://ai-service:8000
       PROMETHEUS_URL: http://prometheus:9090
+      BLACKBOX_EXPORTER_URL: http://blackbox-exporter:9115
       ORDER_SERVICE_URL: http://order-service:3000
       DATA_DIRECTORY: /app/data
     volumes:
@@ -125,6 +150,7 @@ services:
       - chaos-controller
       - ai-service
       - prometheus
+      - blackbox-exporter
 
 networks:
   default:
