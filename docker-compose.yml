@@ -1,4 +1,18 @@
 services:
+  mongodb:
+    image: mongo:8.0
+    container_name: chaosguard-mongodb
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27018:27017"
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand('ping').ok\" | grep 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
   payment-service:
     build: ./payment-service
     image: payment-service:1.0
@@ -44,10 +58,12 @@ services:
       - "127.0.0.1:4000:4000"
     environment:
       JWT_SECRET: ${JWT_SECRET:-chaosguard_jwt_secret_dev_key_2026}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017}
+      MONGODB_DB: ${MONGODB_DB:-chaosguard}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./data:/app/data
     depends_on:
+      - mongodb
       - payment-service
       - order-service
       - notification-service
@@ -78,10 +94,11 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017}
+      MONGODB_DB: ${MONGODB_DB:-chaosguard}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
       GEMINI_TIMEOUT_SECONDS: ${GEMINI_TIMEOUT_SECONDS:-30}
-      AI_ANALYSIS_STORE_PATH: /app/data/ai_analysis.json
     volumes:
       - ./data:/app/data
 
@@ -92,16 +109,17 @@ services:
       - "127.0.0.1:8080:8080"
     environment:
       JWT_SECRET: ${JWT_SECRET:-chaosguard_jwt_secret_dev_key_2026}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017}
+      MONGODB_DB: ${MONGODB_DB:-chaosguard}
       CHAOS_CONTROLLER_URL: http://chaos-controller:4000
       AI_SERVICE_URL: http://ai-service:8000
       AUTOMATION_SERVICE_URL: http://automation-service:8100
       LOAD_TEST_URL: http://load-test-runner:8200
       DATA_DIRECTORY: /app/data
-      SERVERS_FILE: /app/servers/registered_servers.json
     volumes:
       - ./data:/app/data:ro
-      - ./dashboard/servers:/app/servers
     depends_on:
+      - mongodb
       - chaos-controller
       - ai-service
       - payment-service
@@ -116,6 +134,8 @@ services:
     ports:
       - "127.0.0.1:8200:8200"
     environment:
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017}
+      MONGODB_DB: ${MONGODB_DB:-chaosguard}
       AI_SERVICE_URL: http://ai-service:8000
       DATA_DIRECTORY: /app/data
       MAX_USERS: "2000"
@@ -123,6 +143,7 @@ services:
     volumes:
       - ./data:/app/data
     depends_on:
+      - mongodb
       - ai-service
       - payment-service
       - order-service
@@ -136,6 +157,8 @@ services:
     ports:
       - "127.0.0.1:8100:8100"
     environment:
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017}
+      MONGODB_DB: ${MONGODB_DB:-chaosguard}
       JWT_SECRET: ${JWT_SECRET:-chaosguard_jwt_secret_dev_key_2026}
       CHAOS_CONTROLLER_URL: http://chaos-controller:4000
       AI_SERVICE_URL: http://ai-service:8000
@@ -147,6 +170,7 @@ services:
       - ./data:/app/data
       - ./ai/outputs:/app/ai/outputs
     depends_on:
+      - mongodb
       - chaos-controller
       - ai-service
       - prometheus
@@ -161,3 +185,6 @@ networks:
     ipam:
       config:
         - subnet: 172.18.0.0/16
+
+volumes:
+  mongodb-data:

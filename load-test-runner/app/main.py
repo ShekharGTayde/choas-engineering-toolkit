@@ -5,24 +5,26 @@ detailed performance + capacity reports.
 """
 
 import asyncio
-import json
 import math
 import os
 import statistics
 import uuid
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urlparse
 
 import httpx
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, model_validator
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 AI_SERVICE_URL   = os.getenv("AI_SERVICE_URL",   "http://ai-service:8000")
-DATA_DIRECTORY   = Path(os.getenv("DATA_DIRECTORY", "/app/data"))
-LOAD_TESTS_FILE  = DATA_DIRECTORY / "load_tests.json"
+MONGODB_URI = os.environ["MONGODB_URI"]
+MONGODB_DB = os.getenv("MONGODB_DB", "chaosguard")
+mongo_client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+tests_collection = mongo_client[MONGODB_DB]["load_tests"]
 
 MAX_USERS        = int(os.getenv("MAX_USERS",    "2000"))
 MAX_DURATION_SEC = int(os.getenv("MAX_DURATION", "600"))   # 10 minutes
@@ -79,19 +81,18 @@ def set_status(test: dict, status: str, extra: dict | None = None) -> None:
     persist_tests()
 
 def persist_tests() -> None:
-    DATA_DIRECTORY.mkdir(parents=True, exist_ok=True)
-    tmp = LOAD_TESTS_FILE.with_suffix(".tmp")
-    tmp.write_text(json.dumps(list(tests.values()), indent=2) + "\n", encoding="utf-8")
-    tmp.replace(LOAD_TESTS_FILE)
+    try:
+        for test in tests.values():
+            tests_collection.replace_one({"testId": test["testId"]}, test, upsert=True)
+    except PyMongoError as error:
+        raise RuntimeError(f"Unable to persist load test: {error}") from error
 
-def load_tests_from_disk() -> None:
-    if LOAD_TESTS_FILE.exists():
-        try:
-            saved = json.loads(LOAD_TESTS_FILE.read_text(encoding="utf-8"))
-            for t in (saved if isinstance(saved, list) else []):
-                tests[t["testId"]] = t
-        except Exception:
-            pass
+def load_tests_from_mongo() -> None:
+    try:
+        for test in tests_collection.find({}, {"_id": 0}):
+            tests[test["testId"]] = test
+    except PyMongoError as error:
+        raise RuntimeError(f"Unable to load load tests: {error}") from error
 
 def validate_target_url(raw_url: str) -> None:
     parsed = urlparse(raw_url)
@@ -101,6 +102,15 @@ def validate_target_url(raw_url: str) -> None:
         raise ValueError("Local targets are disabled for this runner")
     if not ALLOW_LOCAL_TARGETS and parsed.hostname.startswith(("10.", "192.168.", "169.254.")):
         raise ValueError("Private and metadata network targets are disabled for this runner")
+
+def runner_target_url(raw_url: str) -> str:
+    """Resolve host-local Compose endpoints from inside the runner container."""
+    parsed = urlparse(raw_url)
+    if parsed.hostname in {"localhost", "127.0.0.1"} and parsed.port in {3000, 3001, 3002}:
+        return parsed._replace(
+            netloc=f"host.docker.internal:{parsed.port}",
+        ).geturl()
+    return raw_url
 
 # ── Pydantic models ───────────────────────────────────────────────────────────
 ALLOWED_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE"}
@@ -212,7 +222,7 @@ async def execute_load_test(test: dict, req: LoadTestRequest) -> None:
     test_id = test["testId"]
 
     # Build the full URL the load test runner calls from *inside Docker*
-    full_url = req.targetUrl.rstrip("/") + req.endpoint
+    full_url = runner_target_url(req.targetUrl).rstrip("/") + req.endpoint
 
     # Extra headers for JSON body
     headers = dict(req.requestHeaders)
@@ -225,7 +235,8 @@ async def execute_load_test(test: dict, req: LoadTestRequest) -> None:
             set_status(test, "STARTING")
 
             # ── Baseline health check ──────────────────────────────────────
-            baseline = await health_probe(client, req.healthUrl)
+            health_url = runner_target_url(req.healthUrl)
+            baseline = await health_probe(client, health_url)
             test["baseline"] = baseline
             persist_tests()
 
@@ -326,14 +337,14 @@ async def execute_load_test(test: dict, req: LoadTestRequest) -> None:
 
             for _ in range(req.recoveryObserveSec):
                 await asyncio.sleep(1.0)
-                check = await health_probe(client, req.healthUrl)
+                check = await health_probe(client, health_url)
                 recovery_checks.append(check)
                 if check["status"] == "UP" and recovered_at is None:
                     recovered_at = asyncio.get_event_loop().time() - recovery_start
                     break
 
             recovery_duration = round(asyncio.get_event_loop().time() - recovery_start, 2)
-            final_health = await health_probe(client, req.healthUrl)
+            final_health = await health_probe(client, health_url)
 
             # ── Final aggregated metrics ──────────────────────────────────
             total_m = compute_metrics(all_results)
@@ -447,7 +458,11 @@ app = FastAPI(title="Load Test Runner", version="1.0.0")
 
 @app.on_event("startup")
 async def startup():
-    load_tests_from_disk()
+    try:
+        mongo_client.admin.command("ping")
+        load_tests_from_mongo()
+    except PyMongoError as error:
+        raise RuntimeError(f"MongoDB is unavailable: {error}") from error
 
 
 @app.get("/health")
@@ -518,7 +533,7 @@ async def validate_endpoint(req: LoadTestRequest):
         headers.setdefault("Content-Type", "application/json")
     try:
         async with httpx.AsyncClient(follow_redirects=True) as client:
-            response = await client.request(req.httpMethod, req.targetUrl.rstrip("/") + req.endpoint,
+            response = await client.request(req.httpMethod, runner_target_url(req.targetUrl).rstrip("/") + req.endpoint,
                                             headers=headers, content=req.requestBody,
                                             timeout=req.timeoutSeconds)
         return {"reachable": True, "status": "UP" if response.status_code < 400 else "DOWN",

@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "dockerode": "^4.0.9",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "mongodb": "^6.19.0"
   }
 }

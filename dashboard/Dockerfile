@@ -18,6 +18,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Install server dependencies
+COPY package*.json ./
+RUN npm install --omit=dev
+
 # Copy the API proxy server
 COPY server.js ./
 

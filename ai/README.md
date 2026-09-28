@@ -19,6 +19,14 @@ It runs at `http://localhost:8000` when started with Docker Compose.
 - `GEMINI_API_KEY`: required Gemini API key. Never commit this value.
 - `GEMINI_MODEL`: optional model name. Defaults to `gemini-2.5-flash`.
 - `GEMINI_TIMEOUT_SECONDS`: optional request timeout. Defaults to `30`.
+- `MONGODB_URI`: required MongoDB connection URI; the service does not fall back to files.
+- `MONGODB_DB`: optional database name. Defaults to `chaosguard`.
+
+AI reports are stored in the `ai_reports` MongoDB collection. The runtime automation
+service stores experiment, anomaly, and resilience records in MongoDB as well. The
+standalone `isolation_forest.py`, `resilience_scoring.py`, and `data_analysis.py`
+programs remain offline analytics tools and continue to read/write CSV/JSON files;
+they are not part of the online persistence path.
 
 The root `.gitignore` excludes `.env`. For local use, set variables in PowerShell or create an untracked `.env` file in the project root.
 

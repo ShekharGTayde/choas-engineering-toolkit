@@ -4,6 +4,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const dns = require('node:dns').promises;
+const { MongoClient } = require('mongodb');
 
 const port = Number(process.env.PORT || 8080);
 const dataDirectory = process.env.DATA_DIRECTORY || '/app/data';
@@ -106,30 +107,26 @@ function validateExternalUrl(rawUrl) {
   return null; // safe
 }
 
-// ── Registered servers store ──────────────────────────────────────────────────
-// Stored in a SEPARATE writable location — the main data volume is read-only
-// for the dashboard. SERVERS_FILE defaults to /app/servers/registered_servers.json
-const serversFile = process.env.SERVERS_FILE || '/app/servers/registered_servers.json';
+// ── MongoDB persistence ──────────────────────────────────────────────────────
+const mongodbUri = process.env.MONGODB_URI;
+const mongodbDbName = process.env.MONGODB_DB || 'chaosguard';
+let mongoClient;
+let usersCollection;
+let serversCollection;
+let anomaliesCollection;
+let resilienceCollection;
+let aiReportsCollection;
 
 async function loadServers() {
-  try {
-    const raw = await fs.readFile(serversFile, 'utf8');
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  return serversCollection.find({}, { projection: { _id: 0 } }).sort({ _id: 1 }).toArray();
 }
 
 async function saveServers(servers) {
-  await fs.mkdir(path.dirname(serversFile), { recursive: true });
-  const tmp = serversFile + '.tmp';
-  await fs.writeFile(tmp, JSON.stringify(servers, null, 2) + '\n', 'utf8');
-  await fs.rename(tmp, serversFile);
+  await serversCollection.deleteMany({});
+  if (servers.length > 0) await serversCollection.insertMany(servers);
 }
 
 // ── Authentication & User store ─────────────────────────────────────────────
-const usersFile = process.env.USERS_FILE || path.join(path.dirname(serversFile), 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'chaosguard_jwt_secret_dev_key_2026';
 
 function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
@@ -203,21 +200,16 @@ function getDefaultUsers() {
 }
 
 async function loadUsers() {
-  try {
-    const raw = await fs.readFile(usersFile, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-  } catch {}
+  const users = await usersCollection.find({}, { projection: { _id: 0 } }).sort({ _id: 1 }).toArray();
+  if (users.length > 0) return users;
   const defaults = getDefaultUsers();
-  await saveUsers(defaults).catch(() => {});
+  await saveUsers(defaults);
   return defaults;
 }
 
 async function saveUsers(users) {
-  await fs.mkdir(path.dirname(usersFile), { recursive: true });
-  const tmp = usersFile + '.tmp';
-  await fs.writeFile(tmp, JSON.stringify(users, null, 2) + '\n', 'utf8');
-  await fs.rename(tmp, usersFile);
+  await usersCollection.deleteMany({});
+  if (users.length > 0) await usersCollection.insertMany(users);
 }
 
 
@@ -348,9 +340,16 @@ async function readCsv(fileName) {
   }
 }
 
-async function fetchJson(url, fallback) {
+async function readMongoCollection(collection) {
+  return collection.find({}, { projection: { _id: 0 } }).toArray();
+}
+
+async function fetchJson(url, fallback, options = {}) {
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(3500) });
+    const response = await fetch(url, {
+      ...options,
+      signal: AbortSignal.timeout(3500),
+    });
     return response.ok ? response.json() : fallback;
   } catch {
     return fallback;
@@ -362,12 +361,14 @@ function asNumber(value, fallback = 0) {
   return Number.isFinite(number) ? number : fallback;
 }
 
-async function getDashboardData() {
+async function getDashboardData(authHeader) {
   const [experiments, anomalies, resilience, analysisPayload, serviceHealth] = await Promise.all([
-    fetchJson(`${chaosControllerUrl}/experiments`, []),
-    readCsv('anomaly_results.csv'),
-    readCsv('resilience_results.csv'),
-    fetchJson(`${aiServiceUrl}/analysis`, { analyses: [] }),
+    fetchJson(`${chaosControllerUrl}/experiments`, [], {
+      headers: { Authorization: authHeader },
+    }),
+    readMongoCollection(anomaliesCollection),
+    readMongoCollection(resilienceCollection),
+    readMongoCollection(aiReportsCollection).then((analyses) => ({ analyses })),
     Promise.all(services.map(async (service) => ({
       name: service.name,
       status: (await fetchJson(service.url, { status: 'DOWN' })).status || 'DOWN',
@@ -463,7 +464,7 @@ function parseBody(raw) {
 }
 
 // ── HTTP server ───────────────────────────────────────────────────────────────
-http.createServer(async (request, response) => {
+const server = http.createServer(async (request, response) => {
   try {
     const requestUrl = new URL(request.url, `http://${request.headers.host}`);
     const { pathname } = requestUrl;
@@ -557,12 +558,19 @@ http.createServer(async (request, response) => {
 
     // ── Dashboard data ──────────────────────────────────────────────────────
     if (pathname === '/api/dashboard' && method === 'GET') {
-      const data = await getDashboardData();
+      const authHeader = request.headers.authorization;
+      if (!getAuthenticatedUser(request)) {
+        return sendJson(response, 401, { error: 'Authentication required.' });
+      }
+      const data = await getDashboardData(authHeader);
       return sendJson(response, 200, data);
     }
 
     // ── Registered servers: list ────────────────────────────────────────────
     if (pathname === '/api/servers' && method === 'GET') {
+      if (!getAuthenticatedUser(request)) {
+        return sendJson(response, 401, { error: 'Authentication required.' });
+      }
       const servers = await loadServers();
       return sendJson(response, 200, { servers });
     }
@@ -673,7 +681,14 @@ http.createServer(async (request, response) => {
       try {
         const upstreamPath = pathname; // runner uses same path
         const upstreamUrl = `${loadTestUrl}${upstreamPath}${requestUrl.search || ''}`;
-        const opts = { method, headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(15000) };
+        const opts = {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(request.headers.authorization ? { Authorization: request.headers.authorization } : {}),
+          },
+          signal: AbortSignal.timeout(15000),
+        };
         if (['POST', 'PUT', 'PATCH'].includes(method)) opts.body = await readBody(request);
         const upstream = await fetch(upstreamUrl, opts);
         const text = await upstream.text();
@@ -753,7 +768,28 @@ http.createServer(async (request, response) => {
     if (!response.headersSent) response.writeHead(500, { 'Content-Type': 'application/json' });
     if (!response.writableEnded) response.end(JSON.stringify({ error: 'Internal server error' }));
   }
-}).listen(port, '0.0.0.0', () => console.log(`chaos dashboard listening on ${port}`));
+});
+
+async function start() {
+  if (!mongodbUri) throw new Error('MONGODB_URI is required.');
+  mongoClient = new MongoClient(mongodbUri, { serverSelectionTimeoutMS: 5000 });
+  await mongoClient.connect();
+  const database = mongoClient.db(mongodbDbName);
+  await database.command({ ping: 1 });
+  usersCollection = database.collection('users');
+  serversCollection = database.collection('registered_servers');
+  anomaliesCollection = database.collection('anomaly_results');
+  resilienceCollection = database.collection('resilience_results');
+  aiReportsCollection = database.collection('ai_reports');
+  await loadUsers();
+  server.listen(port, '0.0.0.0', () => console.log(`chaos dashboard listening on ${port}`));
+}
+
+start().catch((error) => {
+  console.error('Unable to connect to MongoDB:', error);
+  if (mongoClient) mongoClient.close().catch(() => {});
+  process.exit(1);
+});
 
 // ── Background server health monitor ─────────────────────────────────────────
 // Polls every 30 seconds — only the backend probes, never the browser

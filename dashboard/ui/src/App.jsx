@@ -31,7 +31,7 @@ function AuthRouter() {
 }
 
 function Dashboard() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +53,10 @@ function Dashboard() {
   const loadData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const res = await fetch('/api/dashboard', { cache: 'no-store' });
+      const res = await fetch('/api/dashboard', {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error(`Dashboard API returned ${res.status}`);
       const json = await res.json();
       setData(json);
@@ -69,7 +72,7 @@ function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => { loadData(false); }, [loadData]);
 

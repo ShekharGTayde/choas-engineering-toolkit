@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../context/AuthContext.jsx';
 import styles from './LoadTestingPage.module.css';
 
 const SERVICES = {
@@ -15,6 +16,7 @@ function Metric({ label, value, unit = '' }) { return <div className={styles.met
 function Status({ value }) { return <span className={`${styles.status} ${styles[(value || 'queued').toLowerCase()]}`}>{value || 'QUEUED'}</span>; }
 
 export default function LoadTestingPage({ addToast }) {
+  const { token } = useAuth();
   const [form, setForm] = useState(initial);
   const [tests, setTests] = useState([]);
   const [active, setActive] = useState(null);
@@ -49,7 +51,7 @@ export default function LoadTestingPage({ addToast }) {
     setBusy(true); setValidation(null);
     try {
       const payload = { ...form, healthUrl: `${form.targetUrl.replace(/\/$/, '')}/health`, requestHeaders: requestHeaders || {}, requestBody: form.requestBody || null, confirmation: true };
-      const response = await fetch('/api/load-tests/validate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const response = await fetch('/api/load-tests/validate', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify(payload) });
       const result = await response.json(); setValidation(result); addToast(result.reachable ? 'Endpoint reachable' : 'Endpoint validation failed', result.reachable ? 'success' : 'error');
     } catch (error) { setValidation({ reachable: false, error: error.message }); } finally { setBusy(false); }
   };
@@ -60,7 +62,7 @@ export default function LoadTestingPage({ addToast }) {
     setBusy(true);
     try {
       const payload = { ...form, healthUrl: `${form.targetUrl.replace(/\/$/, '')}/health`, requestHeaders, requestBody: form.requestBody || null };
-      const response = await fetch('/api/load-tests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const response = await fetch('/api/load-tests', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify(payload) });
       const result = await response.json(); if (!response.ok) throw new Error(result.detail || result.error || 'Unable to start test');
       setActive(result); setView('running'); addToast(`Started ${result.testId}`, 'success');
     } catch (error) { addToast(error.message, 'error'); } finally { setBusy(false); }

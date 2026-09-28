@@ -1,6 +1,5 @@
 import asyncio
 import base64
-import csv
 import hashlib
 import hmac
 import json
@@ -8,7 +7,6 @@ import os
 import time
 import uuid
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, Literal
 
 import httpx
@@ -21,11 +19,17 @@ PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
 BLACKBOX_URL = os.getenv("BLACKBOX_EXPORTER_URL", "http://blackbox-exporter:9115")
 ORDER_SERVICE_URL = os.getenv("ORDER_SERVICE_URL", "http://order-service:3000")
 JWT_SECRET = os.getenv("JWT_SECRET", "chaosguard_jwt_secret_dev_key_2026")
-DATA_DIRECTORY = Path(os.getenv("DATA_DIRECTORY", "/app/data"))
-EXPERIMENTS_CSV = DATA_DIRECTORY / "experiments.csv"
-ANOMALY_CSV = DATA_DIRECTORY / "anomaly_results.csv"
-RESILIENCE_CSV = DATA_DIRECTORY / "resilience_results.csv"
-RUNS_JSON = DATA_DIRECTORY / "full_experiment_runs.json"
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
+
+MONGODB_URI = os.environ["MONGODB_URI"]
+MONGODB_DB = os.getenv("MONGODB_DB", "chaosguard")
+mongo_client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+mongo_db = mongo_client[MONGODB_DB]
+runs_collection = mongo_db["experiment_runs"]
+experiments_collection = mongo_db["experiments"]
+anomaly_collection = mongo_db["anomaly_results"]
+resilience_collection = mongo_db["resilience_results"]
 ALLOWED_SERVICES = {"payment-service", "order-service", "notification-service"}
 ALLOWED_FAILURES = {"stop", "restart", "latency"}
 ALLOWED_LATENCIES = {500, 1000, 2000, 5000}
@@ -76,10 +80,32 @@ def set_status(run: dict[str, Any], status: str) -> None:
 
 
 def persist_runs() -> None:
-    DATA_DIRECTORY.mkdir(parents=True, exist_ok=True)
-    temporary = RUNS_JSON.with_suffix(".tmp")
-    temporary.write_text(json.dumps(list(runs.values()), indent=2) + "\n", encoding="utf-8")
-    temporary.replace(RUNS_JSON)
+    try:
+        for run in runs.values():
+            runs_collection.replace_one({"runId": run["runId"]}, run, upsert=True)
+    except PyMongoError as error:
+        raise RuntimeError(f"Unable to persist experiment run: {error}") from error
+
+
+def persist_experiment_records(experiment: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Persist runtime experiment, anomaly, and resilience records in MongoDB."""
+    experiment = {key: value for key, value in experiment.items() if key != "_id"}
+    anomaly = {
+        "experimentId": experiment["experimentId"],
+        "anomalyLabel": "ANOMALY" if experiment.get("errorRate", 0) > 50 else "NORMAL",
+        "anomalyScore": float(experiment.get("errorRate", 0)),
+    }
+    resilience = {
+        "experimentId": experiment["experimentId"],
+        "resilienceScore": max(0.0, round(100 - float(experiment.get("errorRate", 0)), 2)),
+    }
+    try:
+        experiments_collection.replace_one({"experimentId": experiment["experimentId"]}, experiment, upsert=True)
+        anomaly_collection.replace_one({"experimentId": anomaly["experimentId"]}, anomaly, upsert=True)
+        resilience_collection.replace_one({"experimentId": resilience["experimentId"]}, resilience, upsert=True)
+    except PyMongoError as error:
+        raise RuntimeError(f"Unable to persist experiment records: {error}") from error
+    return anomaly, resilience
 
 
 async def get_json(client: httpx.AsyncClient, url: str, **kwargs: Any) -> Any:
@@ -198,32 +224,6 @@ def traffic_metrics(traffic: list[dict[str, Any]], experiment: dict[str, Any], b
     }
 
 
-def append_experiment_csv(experiment: dict[str, Any]) -> None:
-    columns = ["experimentId", "experimentStartTime", "failureStartTime", "recoveryTime", "targetService", "failureType", "configuredFailureDuration", "actualRecoveryDuration", "totalRequests", "successfulRequests", "failedRequests", "errorRate", "averageResponseTime", "peakResponseTime", "affectedServices", "cascadingFailure", "experimentResult", "experimentExecutionStatus", "injectedLatencyMilliseconds"]
-    existing_ids = set()
-    if EXPERIMENTS_CSV.exists():
-        with EXPERIMENTS_CSV.open(newline="", encoding="utf-8") as file:
-            existing_ids = {row["experimentId"] for row in csv.DictReader(file)}
-    if experiment["experimentId"] in existing_ids:
-        return
-    with EXPERIMENTS_CSV.open("a", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=columns, quoting=csv.QUOTE_ALL)
-        writer.writerow({**experiment, "affectedServices": ";".join(experiment.get("affectedServices", [])), "cascadingFailure": str(experiment.get("cascadingFailure", False)).lower()})
-
-
-async def run_ml() -> None:
-    for script in ("ai/isolation_forest.py", "ai/resilience_scoring.py"):
-        process = await asyncio.create_subprocess_exec("python", script, cwd="/app", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        _, stderr = await process.communicate()
-        if process.returncode != 0:
-            raise RuntimeError(f"{script} failed: {stderr.decode().strip()}")
-
-
-def csv_record(file_path: Path, experiment_id: str) -> dict[str, str]:
-    with file_path.open(newline="", encoding="utf-8") as file:
-        return next((row for row in csv.DictReader(file) if row["experimentId"] == experiment_id), {})
-
-
 async def execute(run: dict[str, Any], request: RunRequest, auth_header: str | None = None) -> None:
     async with run_lock:
         try:
@@ -247,11 +247,8 @@ async def execute(run: dict[str, Any], request: RunRequest, auth_header: str | N
                 controller_experiment = controller_response.json()
                 after = await prometheus_snapshot(client)
                 experiment = {**controller_experiment, **traffic_metrics(traffic, controller_experiment, before, after)}
-                append_experiment_csv(experiment)
+                anomaly, resilience = persist_experiment_records(experiment)
                 set_status(run, "ANALYZING")
-                await run_ml()
-                anomaly = csv_record(ANOMALY_CSV, experiment["experimentId"])
-                resilience = csv_record(RESILIENCE_CSV, experiment["experimentId"])
                 set_status(run, "AI_ANALYSIS")
                 ai_request = {**experiment, "affectedServiceCount": len(experiment["affectedServices"]), **anomaly, **resilience}
                 ai_response = await client.post(f"{AI_SERVICE_URL}/analyze-experiment", json=ai_request)
@@ -264,6 +261,14 @@ async def execute(run: dict[str, Any], request: RunRequest, auth_header: str | N
 
 
 app = FastAPI(title="Chaos Experiment Automation", version="1.0.0")
+
+
+@app.on_event("startup")
+async def startup() -> None:
+    try:
+        mongo_client.admin.command("ping")
+    except PyMongoError as error:
+        raise RuntimeError(f"MongoDB is unavailable: {error}") from error
 
 
 @app.get("/health")

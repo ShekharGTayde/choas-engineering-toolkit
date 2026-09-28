@@ -216,6 +216,8 @@ Open `.env` and set:
 GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-2.5-flash          # optional, this is the default
 GEMINI_TIMEOUT_SECONDS=30              # optional, this is the default
+MONGODB_URI=mongodb://mongodb:27017   # use your MongoDB Atlas URI here when supplied
+MONGODB_DB=chaosguard
 ```
 
 > **Never commit your `.env` file.** It is already excluded in `.gitignore`.
@@ -227,6 +229,23 @@ GEMINI_TIMEOUT_SECONDS=30              # optional, this is the default
 ```bash
 docker compose up --build -d
 ```
+
+All runtime application data is stored in MongoDB; services do not fall back to
+JSON files. Set `MONGODB_URI` (and optionally `MONGODB_DB`, defaulting to
+`chaosguard`) in `.env`. The supplied Compose file starts a local MongoDB
+container and uses `mongodb://mongodb:27017` by default. If MongoDB is missing
+or unreachable, services exit with a startup error.
+
+Runtime collections include `users`, `registered_servers`, `experiments`,
+`experiment_runs`, `load_tests`, `ai_reports`, `anomaly_results`, and
+`resilience_results`. Existing CSV/JSON files remain only as legacy fixtures or
+offline analytics exports; they are not used as the runtime source of truth.
+
+To inspect the Compose database from MongoDB Compass, connect to
+`mongodb://localhost:27018` and select the `chaosguard` database. The MongoDB
+container is bound to localhost on port `27017`; databases such as `samajh`
+belong to a different MongoDB instance or database and are not used by this
+application.
 
 This starts 9 containers:
 

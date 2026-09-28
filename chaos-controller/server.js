@@ -1,8 +1,7 @@
 const express = require('express');
 const Docker = require('dockerode');
-const fs = require('node:fs/promises');
-const path = require('node:path');
 const crypto = require('node:crypto');
+const { MongoClient } = require('mongodb');
 
 // ── JWT auth (shared secret with dashboard) ──────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || 'chaosguard_jwt_secret_dev_key_2026';
@@ -47,8 +46,10 @@ const app = express();
 const docker = new Docker({ socketPath: process.env.DOCKER_SOCKET || '/var/run/docker.sock' });
 const port = process.env.PORT || 4000;
 const maxDurationSeconds = 3600;
-const dataDirectory = path.join(__dirname, 'data');
-const experimentsFile = path.join(dataDirectory, 'experiments.json');
+const mongodbUri = process.env.MONGODB_URI;
+const mongodbDbName = process.env.MONGODB_DB || 'chaosguard';
+let mongoClient;
+let experimentsCollection;
 const dependencyTimeoutMilliseconds = 2000;
 const impactProbeCount = 10;
 let experiments = [];
@@ -77,21 +78,14 @@ app.use(express.json());
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 async function loadExperiments() {
-  try {
-    const fileContents = await fs.readFile(experimentsFile, 'utf8');
-    const savedExperiments = JSON.parse(fileContents);
-    experiments = Array.isArray(savedExperiments) ? savedExperiments : [];
-  } catch (error) {
-    if (error.code !== 'ENOENT') {
-      throw error;
-    }
-    await saveExperiments();
-  }
+  experiments = await experimentsCollection.find({}, { projection: { _id: 0 } }).sort({ _id: 1 }).toArray();
 }
 
 async function saveExperiments() {
-  await fs.mkdir(dataDirectory, { recursive: true });
-  await fs.writeFile(experimentsFile, `${JSON.stringify(experiments, null, 2)}\n`);
+  await experimentsCollection.deleteMany({});
+  if (experiments.length > 0) {
+    await experimentsCollection.insertMany(experiments.map((experiment) => ({ ...experiment })));
+  }
 }
 
 async function collectOrderProbe() {
@@ -466,13 +460,24 @@ app.post('/experiments', async (request, response) => {
   }
 });
 
-loadExperiments()
+async function start() {
+  if (!mongodbUri) throw new Error('MONGODB_URI is required.');
+  mongoClient = new MongoClient(mongodbUri, { serverSelectionTimeoutMS: 5000 });
+  await mongoClient.connect();
+  await mongoClient.db(mongodbDbName).command({ ping: 1 });
+  experimentsCollection = mongoClient.db(mongodbDbName).collection('experiments');
+  await loadExperiments();
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`chaos-controller listening on port ${port}`);
+  });
+}
+
+start()
   .then(() => {
-    app.listen(port, '0.0.0.0', () => {
-      console.log(`chaos-controller listening on port ${port}`);
-    });
+    // MongoDB is verified before accepting requests.
   })
   .catch((error) => {
-    console.error('Unable to load experiment data:', error);
+    console.error('Unable to connect to MongoDB:', error);
+    if (mongoClient) mongoClient.close().catch(() => {});
     process.exitCode = 1;
   });

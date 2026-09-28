@@ -47,13 +47,15 @@ export default function Dashboard({
         <div className={styles.heroGrid}>
           <div className={styles.heroLeft}>
             <div className={styles.heroTagRow}>
-              <span className={styles.heroTag}>[SYS.SCOPE // PRODUCTION RESILIENCE]</span>
+              
               <span className={styles.heroCoord}>COORD: 51.5074° N, 0.1278° W</span>
-              <span className={styles.heroCoord}>SPEC: RFC-9110 // FAULT HARNESS</span>
+             
             </div>
 
-            <h1 className={styles.heroTitle}>CHAOSGUARD</h1>
-            <h2 className={styles.heroSubtitle}>RESILIENCE ENGINEERING // CONSOLE</h2>
+            <h1 className={styles.heroTitle}>BREAK IT</h1>
+            <h1 className={styles.heroTitle}>BEFORE</h1>
+            <h1 className={styles.heroTitle}>PRODUCTION DOES</h1>
+            <h2 className={styles.heroSubtitle}>RESILIENCE ENGINEERING TOOLKIT</h2>
 
             <p className={styles.heroDescription}>
               Autonomous chaos orchestration, isolation forest anomaly detection, and
