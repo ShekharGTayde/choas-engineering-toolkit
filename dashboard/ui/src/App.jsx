@@ -6,6 +6,7 @@ import DashboardView from './components/Dashboard.jsx';
 import RunExperimentDialog from './components/RunExperimentDialog.jsx';
 import ServersPage from './components/ServersPage.jsx';
 import LoadTestingPage from './components/LoadTestingPage.jsx';
+import FullResilienceTestPage from './components/FullResilienceTestPage.jsx';
 import Toast from './components/Toast.jsx';
 import LoadingScreen from './components/LoadingScreen.jsx';
 import ErrorScreen from './components/ErrorScreen.jsx';
@@ -154,6 +155,10 @@ function Dashboard() {
           {/* ── Pre-Deployment Load Testing tab ── */}
           {activeTab === 'load-testing' && (
             <LoadTestingPage addToast={addToast} />
+          )}
+
+          {activeTab === 'full-resilience' && (
+            <FullResilienceTestPage addToast={addToast} />
           )}
 
           {error && data && (

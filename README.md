@@ -237,7 +237,7 @@ container and uses `mongodb://mongodb:27017` by default. If MongoDB is missing
 or unreachable, services exit with a startup error.
 
 Runtime collections include `users`, `registered_servers`, `experiments`,
-`experiment_runs`, `load_tests`, `ai_reports`, `anomaly_results`, and
+`experiment_runs`, `full_resilience_tests`, `load_tests`, `ai_reports`, `anomaly_results`, and
 `resilience_results`. Existing CSV/JSON files remain only as legacy fixtures or
 offline analytics exports; they are not used as the runtime source of truth.
 
@@ -260,6 +260,14 @@ This starts 9 containers:
 | `order-service` | http://localhost:3001 | Target service |
 | `notification-service` | http://localhost:3002 | Target service |
 | `prometheus` | http://localhost:9090 | Metrics collection |
+
+The automation service also exposes the end-to-end resilience workflow:
+
+* `POST /run-full-resilience-test` (Operator JWT required) starts traffic,
+  fault injection, recovery/Prometheus collection, and AI analysis.
+* `GET /run-full-resilience-test/{runId}` (or `/status`) returns live or persisted status.
+* `GET /run-full-resilience-test/{runId}/report` returns the consolidated
+  MongoDB record consumed by report/PDF presentation layers.
 
 ---
 

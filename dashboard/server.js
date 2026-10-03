@@ -732,6 +732,28 @@ const server = http.createServer(async (request, response) => {
       } catch {
         return sendJson(response, 503, { detail: 'Automation service is unavailable' });
       }
+
+    }
+
+    if (pathname.startsWith('/api/run-full-resilience-test') &&
+        ['GET', 'POST'].includes(method)) {
+      const reqUser = getAuthenticatedUser(request);
+      if (!reqUser || reqUser.role !== 'Operator') {
+        return sendJson(response, 403, { error: 'Operator role required to run resilience tests.' });
+      }
+      const body = method === 'POST' ? await readBody(request) : undefined;
+      const upstreamPath = pathname.replace(/^\/api/, '');
+      const upstream = await fetch(`${automationServiceUrl}${upstreamPath}${requestUrl.search || ''}`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: request.headers.authorization,
+        },
+        body,
+        signal: AbortSignal.timeout(15000),
+      });
+      const text = await upstream.text();
+      return sendJson(response, upstream.status, text);
     }
 
     // ── Static files ────────────────────────────────────────────────────────

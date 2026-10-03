@@ -1,11 +1,13 @@
 import asyncio
 import base64
+import binascii
 import hashlib
 import hmac
 import json
 import os
 import time
 import uuid
+from base64 import urlsafe_b64decode
 from datetime import datetime, timezone
 from typing import Any, Literal
 
@@ -30,6 +32,7 @@ runs_collection = mongo_db["experiment_runs"]
 experiments_collection = mongo_db["experiments"]
 anomaly_collection = mongo_db["anomaly_results"]
 resilience_collection = mongo_db["resilience_results"]
+full_resilience_collection = mongo_db["full_resilience_tests"]
 ALLOWED_SERVICES = {"payment-service", "order-service", "notification-service"}
 ALLOWED_FAILURES = {"stop", "restart", "latency"}
 ALLOWED_LATENCIES = {500, 1000, 2000, 5000}
@@ -47,6 +50,34 @@ def generate_internal_operator_token() -> str:
         hmac.new(JWT_SECRET.encode(), f"{header}.{body}".encode(), hashlib.sha256).digest()
     ).decode().rstrip("=")
     return f"{header}.{body}.{sig}"
+
+
+def verify_operator_jwt(authorization: str | None) -> dict[str, Any] | None:
+    """Validate the operator token before accepting an orchestration request."""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    parts = authorization[7:].strip().split(".")
+    if len(parts) != 3:
+        return None
+    header, payload, signature = parts
+    expected = hmac.new(
+        JWT_SECRET.encode(), f"{header}.{payload}".encode(), hashlib.sha256
+    ).digest()
+    try:
+        token_header = json.loads(urlsafe_b64decode(header + "=" * (-len(header) % 4)))
+        supplied = urlsafe_b64decode(signature + "=" * (-len(signature) % 4))
+        claims = json.loads(urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
+    except (ValueError, json.JSONDecodeError, UnicodeDecodeError, binascii.Error):
+        return None
+    if token_header.get("alg") != "HS256" or not hmac.compare_digest(supplied, expected) or claims.get("role") != "Operator":
+        return None
+    if claims.get("exp") is not None:
+        try:
+            if int(claims["exp"]) <= int(time.time()):
+                return None
+        except (TypeError, ValueError):
+            return None
+    return claims
 MAX_DURATION_SECONDS = 60
 TRAFFIC_REQUESTS = 10
 STATUS_FLOW = ["QUEUED", "RUNNING", "FAULT_INJECTED", "COLLECTING_METRICS", "ANALYZING", "AI_ANALYSIS", "COMPLETED"]
@@ -59,6 +90,7 @@ class RunRequest(BaseModel):
     failureType: Literal["stop", "restart", "latency"]
     durationSeconds: int = Field(ge=1, le=MAX_DURATION_SECONDS)
     latencyMilliseconds: int | None = None
+    trafficRequests: int = Field(default=10, ge=1, le=500)
 
     @model_validator(mode="after")
     def validate_latency(self) -> "RunRequest":
@@ -106,6 +138,31 @@ def persist_experiment_records(experiment: dict[str, Any]) -> tuple[dict[str, An
     except PyMongoError as error:
         raise RuntimeError(f"Unable to persist experiment records: {error}") from error
     return anomaly, resilience
+
+
+def persist_full_resilience_report(run: dict[str, Any]) -> None:
+    """Store one consolidated document for status/report consumers and PDF builders."""
+    report = {
+        "runId": run["runId"],
+        "reportVersion": "1.0",
+        "createdAt": run.get("createdAt"),
+        "updatedAt": now(),
+        "executionStatus": run.get("executionStatus"),
+        "status": run.get("status"),
+        "statusHistory": run.get("statusHistory", []),
+        "request": run.get("request", {}),
+        "experimentId": run.get("experimentId"),
+        "metrics": run.get("metrics", {}),
+        "anomaly": run.get("anomaly", {}),
+        "resilience": run.get("resilience", {}),
+        "aiAnalysis": run.get("aiAnalysis"),
+        "error": run.get("error"),
+        "failedStage": run.get("failedStage"),
+    }
+    try:
+        full_resilience_collection.replace_one({"runId": run["runId"]}, report, upsert=True)
+    except PyMongoError as error:
+        raise RuntimeError(f"Unable to persist full resilience report: {error}") from error
 
 
 async def get_json(client: httpx.AsyncClient, url: str, **kwargs: Any) -> Any:
@@ -192,9 +249,9 @@ async def prometheus_metrics_by_source(
         }
 
 
-async def send_order_traffic(client: httpx.AsyncClient, duration_seconds: int) -> list[dict[str, Any]]:
+async def send_order_traffic(client: httpx.AsyncClient, duration_seconds: int, request_count: int) -> list[dict[str, Any]]:
     async def send(index: int) -> dict[str, Any]:
-        await asyncio.sleep((duration_seconds + 2) * index / max(1, TRAFFIC_REQUESTS - 1))
+        await asyncio.sleep((duration_seconds + 2) * index / max(1, request_count - 1))
         started = asyncio.get_running_loop().time()
         try:
             response = await client.post(
@@ -204,7 +261,7 @@ async def send_order_traffic(client: httpx.AsyncClient, duration_seconds: int) -
             return {"successful": response.is_success, "responseTime": round((asyncio.get_running_loop().time() - started) * 1000, 2)}
         except httpx.HTTPError:
             return {"successful": False, "responseTime": round((asyncio.get_running_loop().time() - started) * 1000, 2)}
-    return await asyncio.gather(*(send(index) for index in range(TRAFFIC_REQUESTS)))
+    return await asyncio.gather(*(send(index) for index in range(request_count)))
 
 
 def traffic_metrics(traffic: list[dict[str, Any]], experiment: dict[str, Any], before: dict[str, float], after: dict[str, float]) -> dict[str, Any]:
@@ -224,7 +281,12 @@ def traffic_metrics(traffic: list[dict[str, Any]], experiment: dict[str, Any], b
     }
 
 
-async def execute(run: dict[str, Any], request: RunRequest, auth_header: str | None = None) -> None:
+async def execute(
+    run: dict[str, Any],
+    request: RunRequest,
+    auth_header: str | None = None,
+    persist_report: bool = False,
+) -> None:
     async with run_lock:
         try:
             set_status(run, "RUNNING")
@@ -240,7 +302,7 @@ async def execute(run: dict[str, Any], request: RunRequest, auth_header: str | N
                 )
                 set_status(run, "FAULT_INJECTED")
                 await asyncio.sleep(0.25)
-                traffic = await send_order_traffic(client, request.durationSeconds)
+                traffic = await send_order_traffic(client, request.durationSeconds, request.trafficRequests)
                 set_status(run, "COLLECTING_METRICS")
                 controller_response = await controller_request
                 controller_response.raise_for_status()
@@ -258,6 +320,9 @@ async def execute(run: dict[str, Any], request: RunRequest, auth_header: str | N
         except Exception as error:
             run.update({"executionStatus": "FAILED", "failedStage": run.get("status", "QUEUED"), "error": str(error)})
             set_status(run, "FAILED")
+        finally:
+            if persist_report:
+                persist_full_resilience_report(run)
 
 
 app = FastAPI(title="Chaos Experiment Automation", version="1.0.0")
@@ -286,10 +351,62 @@ async def run_full_experiment(request: RunRequest, http_request: Request) -> dic
     return run
 
 
+@app.post("/run-full-resilience-test", status_code=202)
+async def run_full_resilience_test(request: RunRequest, http_request: Request) -> dict[str, Any]:
+    """Run traffic, fault injection, recovery metrics, and AI analysis as one run."""
+    auth_header = http_request.headers.get("authorization")
+    if verify_operator_jwt(auth_header) is None:
+        raise HTTPException(status_code=401, detail="Valid Operator JWT is required")
+    if run_lock.locked() or any(run.get("status") not in {"COMPLETED", "FAILED"} for run in runs.values()):
+        raise HTTPException(status_code=409, detail="A resilience test is already running")
+    run_id = str(uuid.uuid4())
+    run = {
+        "runId": run_id,
+        "workflow": "full-resilience-test",
+        "request": request.model_dump(),
+        "executionStatus": "QUEUED",
+        "status": "QUEUED",
+        "statusHistory": [{"status": "QUEUED", "at": now()}],
+        "createdAt": now(),
+    }
+    runs[run_id] = run
+    persist_runs()
+    persist_full_resilience_report(run)
+    asyncio.create_task(execute(run, request, auth_header, persist_report=True))
+    return run
+
+
 @app.get("/run-full-experiment/{run_id}")
 async def get_run(run_id: str) -> dict[str, Any]:
     if run_id not in runs: raise HTTPException(status_code=404, detail="Experiment run not found")
     return runs[run_id]
+
+
+@app.get("/run-full-resilience-test/{run_id}")
+@app.get("/run-full-resilience-test/{run_id}/status")
+async def get_full_resilience_status(run_id: str) -> dict[str, Any]:
+    """Return live workflow status (or the persisted status after a restart)."""
+    if run_id in runs:
+        return runs[run_id]
+    try:
+        report = full_resilience_collection.find_one({"runId": run_id}, {"_id": 0})
+    except PyMongoError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    if report is None:
+        raise HTTPException(status_code=404, detail="Resilience test not found")
+    return report
+
+
+@app.get("/run-full-resilience-test/{run_id}/report")
+async def get_full_resilience_report(run_id: str) -> dict[str, Any]:
+    """Return the consolidated, PDF-friendly resilience report."""
+    try:
+        report = full_resilience_collection.find_one({"runId": run_id}, {"_id": 0})
+    except PyMongoError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    if report is None:
+        raise HTTPException(status_code=404, detail="Resilience report not found")
+    return report
 
 
 @app.get("/metrics")

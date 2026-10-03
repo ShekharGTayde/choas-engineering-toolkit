@@ -19,6 +19,8 @@ export default function TopBar({
         return 'TARGET SYSTEMS & MONITORED SERVERS';
       case 'load-testing':
         return 'PRE-DEPLOYMENT LOAD VERIFICATION';
+      case 'full-resilience':
+        return 'FULL RESILIENCE TEST & AI REPORT';
       default:
         return 'RESILIENCE CONTROL ROOM & CHAOS HARNESS';
     }

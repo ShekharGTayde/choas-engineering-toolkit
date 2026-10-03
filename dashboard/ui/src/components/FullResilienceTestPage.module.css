@@ -1,0 +1,25 @@
+.page { padding: 2rem; color: var(--text-primary); }
+.header { display: flex; justify-content: space-between; gap: 2rem; align-items: flex-start; margin-bottom: 2rem; }
+.eyebrow { color: var(--accent-orange); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
+.header h1 { margin: .3rem 0 .6rem; font-size: clamp(2rem, 4vw, 3.5rem); }
+.header p { max-width: 680px; color: var(--text-secondary); }
+.form, .statusPanel, .report { background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; box-shadow: var(--shadow); }
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.form label { display: grid; gap: .45rem; color: var(--text-secondary); font-size: .85rem; }
+.form input, .form select { width: 100%; padding: .8rem; border: 1px solid var(--border); border-radius: .5rem; background: var(--surface-muted); color: var(--text-primary); }
+.form button, .statusPanel button, .printButton { align-self: end; padding: .85rem 1.1rem; border: 0; border-radius: 999px; color: white; background: var(--accent-orange); font-weight: 700; cursor: pointer; }
+.statusPanel { text-align: center; }
+.statusPanel h2 { font-size: 2.4rem; margin: .4rem 0; }
+.error { margin: 1rem 0; padding: 1rem; color: #b42318; background: #fee4e2; border-radius: .5rem; }
+.reportTitle { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; font-size: .8rem; letter-spacing: .08em; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .8rem; margin: 1.5rem 0; }
+.metric { padding: 1rem; border-radius: .6rem; background: var(--surface-muted); }
+.metric span { display: block; color: var(--text-secondary); font-size: .75rem; text-transform: uppercase; }
+.metric strong { display: block; margin-top: .4rem; font-size: 1.2rem; }
+.report h3 { margin-top: 1.5rem; }
+.report li { margin: .6rem 0; }
+@media print {
+  .page { padding: 0; }
+  .header, .form, .statusPanel, .printButton { display: none; }
+  .report { border: 0; box-shadow: none; }
+}

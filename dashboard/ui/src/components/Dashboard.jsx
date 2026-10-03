@@ -47,20 +47,33 @@ export default function Dashboard({
         <div className={styles.heroGrid}>
           <div className={styles.heroLeft}>
             <div className={styles.heroTagRow}>
-              
+              <span className={styles.heroTag}>CHAOSGUARD // CONTROL ROOM</span>
+              <span className={styles.heroLive}><span className={styles.heroLiveDot} /> LIVE TELEMETRY</span>
               <span className={styles.heroCoord}>COORD: 51.5074° N, 0.1278° W</span>
-             
             </div>
 
-            <h1 className={styles.heroTitle}>BREAK IT</h1>
-            <h1 className={styles.heroTitle}>BEFORE</h1>
-            <h1 className={styles.heroTitle}>PRODUCTION DOES</h1>
+            <h1 className={styles.heroTitle}>BREAK IT<br />BEFORE<br /><em>PRODUCTION DOES</em></h1>
             <h2 className={styles.heroSubtitle}>RESILIENCE ENGINEERING TOOLKIT</h2>
 
             <p className={styles.heroDescription}>
               Autonomous chaos orchestration, isolation forest anomaly detection, and
               cascading failure mitigation for distributed microservice topologies.
             </p>
+
+            <div className={styles.heroStats} aria-label="Cluster summary">
+              <div className={styles.heroStat}>
+                <span className={styles.heroStatValue}>{services.length || '—'}</span>
+                <span className={styles.heroStatLabel}>TARGET NODES</span>
+              </div>
+              <div className={styles.heroStat}>
+                <span className={styles.heroStatValue}>{metrics?.experiments ?? metrics?.totalExperiments ?? '—'}</span>
+                <span className={styles.heroStatLabel}>EXPERIMENTS RUN</span>
+              </div>
+              <div className={styles.heroStat}>
+                <span className={styles.heroStatValue}>{allOperational ? '100%' : '—'}</span>
+                <span className={styles.heroStatLabel}>AVAILABILITY</span>
+              </div>
+            </div>
           </div>
 
           {/* Floating Frosted Glass Identity Card */}
