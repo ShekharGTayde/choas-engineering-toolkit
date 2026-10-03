@@ -52,7 +52,7 @@ export default function Dashboard({
               <span className={styles.heroCoord}>COORD: 51.5074° N, 0.1278° W</span>
             </div>
 
-            <h1 className={styles.heroTitle}>BREAK IT<br />BEFORE<br /><em>PRODUCTION DOES</em></h1>
+            <h1 className={styles.heroTitle}>BREAK IT BEFORE PRODUCTION DOES</h1>
             <h2 className={styles.heroSubtitle}>RESILIENCE ENGINEERING TOOLKIT</h2>
 
             <p className={styles.heroDescription}>

@@ -104,17 +104,41 @@ export default function FullResilienceTestPage({ addToast }) {
 
   return (
     <section className={styles.page}>
+      <span className={`${styles.crosshair} ${styles.crosshairTop}`}>+</span>
+      <span className={`${styles.crosshair} ${styles.crosshairRight}`}>+</span>
       <header className={styles.header}>
-        <div>
-          <p className={styles.eyebrow}>End-to-end resilience verification</p>
-          <h1>Full Resilience Test</h1>
-          <p>Generate traffic, inject a controlled fault, measure recovery, and produce one AI-backed resilience report.</p>
+        <div className={styles.heroCopy}>
+          <div className={styles.heroTagRow}>
+            <p className={styles.eyebrow}>ChaosGuard // Full-suite runner</p>
+            <span className={styles.liveBadge}><span /> READY TO INJECT</span>
+          </div>
+          <p className={styles.heroKicker}>End-to-end resilience verification</p>
+          <h1>FULL RESILIENCE<br /><em>TEST</em></h1>
+          <p className={styles.heroDescription}>Generate traffic, inject a controlled fault, measure recovery, and produce one AI-backed resilience report.</p>
+          <div className={styles.heroStats}>
+            <div><strong>01</strong><span>TEST PIPELINE</span></div>
+            <div><strong>05</strong><span>OBSERVABILITY STAGES</span></div>
+            <div><strong>AI</strong><span>ANALYSIS INCLUDED</span></div>
+          </div>
         </div>
-        {report && <button type="button" className={styles.printButton} onClick={downloadPdf}>Download PDF</button>}
+        <div className={styles.heroAside}>
+          <span className={styles.asideLabel}>RUNNER STATUS</span>
+          <strong>{run ? (run.status || 'QUEUED') : 'STANDBY'}</strong>
+          <span className={styles.asideRule} />
+          <span>Traffic → fault → recovery → report</span>
+          {report && <button type="button" className={styles.printButton} onClick={downloadPdf}>Download PDF ↗</button>}
+        </div>
       </header>
 
       {!run && (
         <form className={styles.form} onSubmit={start}>
+          <div className={styles.formIntro}>
+            <div>
+              <span className={styles.sectionCode}>[CONFIG // 01]</span>
+              <h2>Configure the failure envelope</h2>
+            </div>
+            <p>Choose a target, define the fault signal, and set the traffic pressure for this controlled verification run.</p>
+          </div>
           <label>Target service
             <select value={form.targetService} onChange={(event) => setField('targetService', event.target.value)}>
               {services.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
@@ -134,13 +158,16 @@ export default function FullResilienceTestPage({ addToast }) {
           <label>Starting users<input type="number" min="1" value={form.startUsers} onChange={(event) => setField('startUsers', event.target.value)} /></label>
           <label>Maximum users<input type="number" min="1" value={form.maxUsers} onChange={(event) => setField('maxUsers', event.target.value)} /></label>
           <label>Load duration (seconds)<input type="number" min="10" max="600" value={form.loadDurationSeconds} onChange={(event) => setField('loadDurationSeconds', event.target.value)} /></label>
-          <button type="submit" disabled={busy || !isOperator}>{busy ? 'Starting…' : 'Run Full Resilience Test'}</button>
+          <div className={styles.formAction}>
+            {!isOperator && <span className={styles.operatorHint}>Operator role required to launch a run.</span>}
+            <button type="submit" disabled={busy || !isOperator}>{busy ? 'Starting…' : 'Run Full Resilience Test ↗'}</button>
+          </div>
         </form>
       )}
 
       {run && !report && (
         <div className={styles.statusPanel}>
-          <p className={styles.eyebrow}>Resilience pipeline</p>
+          <p className={styles.eyebrow}>[PIPELINE // LIVE]</p>
           <h2>{run.status || 'QUEUED'}</h2>
           <p>{run.currentStage || run.failedStage || 'Traffic, fault injection, observability, recovery, and analysis are being coordinated.'}</p>
           {run.error && <div className={styles.error}>{run.error}</div>}
